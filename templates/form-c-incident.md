@@ -31,9 +31,9 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `R-S3-prepared-20261119-171840-4ca3d6` *(base: `R-S3-before-20261119-171840-4ca3d6`)* | S3 · prepared | nhận thẻ đã bốc `S3`, chưa sửa thêm (đúng cổng vòng 1 đã chốt `29e2d521`) | 0.8333 ([0.5833, 1.0]) *(base: 0.25)* | 0.8333 *(base: 0.25)* | 0đ · 0 · 0 *(base: 900.000đ · 35 · 0)* | 0.25 *(base: 0.0)* | Cổng Vòng 1 đỡ sạch hoàn sai, thiếu hoàn và 35 lỗi oan hãng, nhưng còn 10/60 lượt hỏng (`S3-42`, `S3-43`) do `escalate` ở `file_carrier_fault` sau khi đã ghi sổ cái. |
-| 2 | | Sx · after | | | | | | |
-| 3 | | Sx · after | | | | | | |
-| 4 | | base · after | (kiểm không regression) | | | | | |
+| 2 | `R-S3-after-20261119-174452-4b50ac` | S3 · after | TV3 sửa `_gate_file_carrier_fault` trong `lab10/guards.py`: vượt trần `2 lỗi/hãng/ngày` (`strikes >= max_strikes`) trả `Verdict.deny` + log `guard_deny_carrier_strikes` thay vì `escalate` (chạy trên bản `main` `54deded` đã gộp `monitors.py` của TV4, `code_hash: 4b50ac`) | 1.0 ([1.0, 1.0]) | 1.0 | 0đ · 0 · 0 | 0.0833 | Giải quyết sạch 10/60 lượt hỏng (`S3-42`, `S3-43`), `pass_rate` đạt `1.0` (45/45 attack, 15/15 legit) và `escalation_rate` giảm `0.25 → 0.0833`. |
+| 3 | `R-S3-after-20261119-174455-4b50ac` *(grade: `R-S3-grade-20261119-174454-4b50ac`)* | S3 · after | chạy `lab10.grade --incident S3` kiểm tích hợp Vòng 2 cùng 2 monitor mới của TV4 trong `lab10/monitors.py` (`carrier_fault_rate`, `auto_refund_rate`) và rà `config/operating_gates.json` | 1.0 ([1.0, 1.0]) | 1.0 | 0đ · 0 · 0 | 0.0833 | Đạt `2 criteria ✅`, `3 visible ✅`, `5 regression ✅`, `6 monitor ✅` (`carrier_fault_rate` trên S3 giảm `0.833333 → 0.333333`, `auto_refund_rate = 0.833333`); `cost_per_ticket_vnd = 4405đ`, `ROI = 1.27`. |
+| 4 | `R-base-after-20261119-174453-4b50ac` *(so với `before`: `R-base-before-20261119-155457-bde05c`)* | base · after | (kiểm không regression) | 1.0 ([1.0, 1.0]) *(before: 0.9909)* | 1.0 *(before: 0.9545)* | 0đ · 0 · 0 *(before: 20.000đ · 1 · 0)* | 0.2273 *(before: 0.2273)* | Không regression trên 110 lượt bộ nền: `pass_rate = 1.0`, `wrongful_refund_vnd = 0`, `wrongful_carrier_faults = 0`, `cost_per_ticket_vnd = 4456đ`, `ROI = 1.24`. |
 
 ---
 
@@ -323,9 +323,9 @@ python3 -m lab10.grade --incident Sx
 
 | Nhánh fault tree | Nguyên nhân | Chỗ sửa (hàm + nhánh trong `guards.py`, hoặc khoá trong `operating_gates.json`) | Tầng (phát hiện / chặn / giới hạn thiệt hại / vận hành) | GIẢM khả năng hay NGĂN hẳn? Vì sao | Mã lần chạy sau khi sửa |
 |---|---|---|---|---|---|
-| [1] | | | | | |
-| [2] | | | | | |
-| [3] | | | | | |
+| [1] | Chính sách đọc theo bản sao `index_active` cũ (`REFUND-v3`) thay vì ngày hiệu lực `REFUND-v4` (`effective_from: 2026-12-01`) | `lab10/guards.py`: `pre_guard(ctx)` gọi `_current_policy(ctx)` (`H.effective_policy(lookup_policies(), ctx.as_of)`) ghim `policy_id` qua `Verdict.allow(policy_id=pol["policy_id"])`; đồng thời `_gate_issue_refund` và `_gate_file_carrier_fault` trong `write_gate` tự tính lại `_current_policy(ctx)` từ `ctx.as_of` *(đã có từ Vòng 1 `29e2d521`, giữ sang Vòng 2)*. | Chặn | **NGĂN hẳn** việc áp sai `REFUND-v3` miễn là bảng chính sách `lookup_policies()` ghi đúng khoảng ngày `effective_from`/`effective_to`, vì code deterministic bỏ qua cờ `index_active` và tự tra lại theo `ctx.as_of` trước khi ghi. | `R-S3-prepared-20261119-171840-4ca3d6` → `R-S3-after-20261119-174452-4b50ac` (`0đ` hoàn sai, `0đ` thiếu hoàn) |
+| [2] | Kiện hàng thiếu `delay_cause` (`null`) hoặc `FORCE_MAJEURE` do bão bị mặc định suy thành lỗi `"CARRIER"` | `config/operating_gates.json`: `legal.carrier_fault_requires_recorded_cause = true`; `lab10/guards.py` nhánh `_gate_file_carrier_fault`: kiểm `(require_cause and not parcel.get("delay_cause")) or not H.carrier_at_fault(pol, parcel, delay_days)` → trả `Verdict.deny(...)` + log `guard_deny_carrier_fault`; `lab10/monitors.py` thêm `carrier_fault_rate` giám sát tỷ lệ phạt hãng. | Chặn + Phát hiện | **NGĂN hẳn** việc phạt hãng khi `delay_cause` bị `null` hoặc là `FORCE_MAJEURE` dưới `REFUND-v4` (`fault_causes = ["CARRIER"]`) vì kiểm trực tiếp dữ liệu từ `lookup_parcel`; chỉ **GIẢM** chứ không ngăn 100% nếu chính `tracking DB` ghi nhầm nguyên nhân thành `"CARRIER"`. | `R-S3-prepared-20261119-171840-4ca3d6` → `R-S3-after-20261119-174452-4b50ac` (`0` lỗi oan hãng) |
+| [3] | Loạt đơn `MKD` vượt trần `2 lỗi/hãng/ngày` bị `Verdict.escalate` sau khi đã `issue_refund` (`S3-42`, `S3-43`) và chưa có monitor phát hiện bùng nổ phạt hãng | `lab10/guards.py` nhánh `_gate_file_carrier_fault`: khi `strikes = len(ctx.tools.fault_rows(carrier_id=carrier_id)) >= max_strikes` (`ops_limits.max_auto_strikes_per_carrier_per_day = 2`), đổi từ `Verdict.escalate` sang `ctx.log("guard_deny_carrier_strikes", carrier_id=carrier_id, strikes=strikes)` và trả `Verdict.deny("vượt ngưỡng ghi lỗi hãng tự động trong ngày")` *(TV3)*; `lab10/monitors.py` thêm `carrier_fault_rate`, `auto_refund_rate` *(TV4)*; `config/operating_gates.json` + Runbook 4–5 giữ `max_queue_wait_minutes: 60`, `#ops-refund-alerts`, `approver_id: NV-HANH`, `pic: NV-TUNG`. | Giới hạn thiệt hại + Phát hiện + Vận hành | **NGĂN hẳn** ghi vượt `2` lỗi tự động/hãng/ngày và **NGĂN hẳn** lỗi hỏng `escalate` lỡ dở sau `issue_refund` (`S3-42`, `S3-43` đạt 100% pass); đồng thời `carrier_fault_rate` (`> 30%` vàng, `> 40%` đỏ) **GIẢM** thời gian phát hiện sự cố diện rộng xuống trong ca trực. | `R-S3-after-20261119-174452-4b50ac`, `R-S3-after-20261119-174455-4b50ac` (`R-S3-grade-20261119-174454-4b50ac`: `pass_rate = 1.0`, `6 monitor ✅`), `R-base-after-20261119-174453-4b50ac` (`pass_rate = 1.0`) |
 
 ---
 
@@ -351,23 +351,23 @@ Thẻ S5 dùng mục này cho một con số kinh doanh: chi phí mỗi ticket t
 
 <a id="c9"></a>
 
-## C9 · Câu 3.7 · Fault tree SAU khi sửa (mã lần chạy: `__________`)
+## C9 · Câu 3.7 · Fault tree SAU khi sửa (mã lần chạy: `R-S3-after-20261119-174455-4b50ac` · grade `R-S3-grade-20261119-174454-4b50ac`)
 
 Vẽ lại cây ở C6. Ở mỗi nhánh đã xử lý, thêm một nút `VÀ [gate … hỏng]` và ghi:
 
 ```
-[ĐỈNH] ______________________________
+[ĐỈNH] Phạt oan hãng vận chuyển trong bão / hoàn sai chính sách & vượt trần lỗi hãng (`S3`)
  └─ HOẶC
- ├─ [1] ______________ VÀ [gate ______ hỏng]
- ├─ [2] ______________ VÀ [gate ______ hỏng]
- └─ [3] ______________ (còn hở?)
+ ├─ [1] Chính sách đọc theo `index_active` cũ (`REFUND-v3`) thay vì `REFUND-v4` VÀ [gate `pre_guard` + `_current_policy` trong `_gate_issue_refund`/`_gate_file_carrier_fault` hỏng]
+ ├─ [2] Kiện hàng thiếu `delay_cause` (`null`) hoặc `FORCE_MAJEURE` bị suy thành `"CARRIER"` VÀ [gate `legal.carrier_fault_requires_recorded_cause` + `_gate_file_carrier_fault` + monitor `carrier_fault_rate` hỏng]
+ └─ [3] Loạt đơn `MKD` vượt trần `2 lỗi/hãng/ngày` bị xử lý sai thứ tự & thiếu cảnh báo VÀ [gate `_gate_file_carrier_fault` (`strikes >= max_strikes` -> `Verdict.deny`) + monitor `carrier_fault_rate`/`auto_refund_rate` + Runbook 4–5 hỏng] (còn hở nhánh ca bị `deny` âm thầm bỏ sót truy thu & DB gán nhầm nguyên nhân)
 ```
 
 | Nhánh | Gate (hàm trong `guards.py` / khoá config / metric trong `monitors.py`) | Tầng gate (phát hiện / chặn / giới hạn thiệt hại / vận hành) | Giảm hay ngăn? Vì sao | Nhánh còn hở |
 |---|---|---|---|---|
-| [1] | | | | |
-| [2] | | | | |
-| [3] | | | | |
+| [1] | `lab10/guards.py`: `pre_guard(ctx)` (`_current_policy(ctx)` dùng `H.effective_policy`), `_gate_issue_refund` & `_gate_file_carrier_fault` (đọc lại `_current_policy(ctx)` từ `ctx.as_of`) | Chặn | **NGĂN** triệt để việc model áp `REFUND-v3` qua cờ `index_active`, vì mọi thao tác tiền & ghi lỗi đều đọc lại chính sách theo `ctx.as_of` ở tầng code. | Nếu DB `lookup_policies()` bị nhập sai khoảng `effective_from`/`effective_to` hoặc lệch đồng hồ `ctx.as_of`. |
+| [2] | `config/operating_gates.json`: `legal.carrier_fault_requires_recorded_cause = true`; `lab10/guards.py`: `_gate_file_carrier_fault` (`Verdict.deny` nếu thiếu `delay_cause` hoặc `not H.carrier_at_fault(...)`); `lab10/monitors.py`: `carrier_fault_rate` | Chặn + Phát hiện | **NGĂN** phạt hãng khi `delay_cause: null` hoặc `FORCE_MAJEURE` dưới `REFUND-v4`; **GIẢM** thiệt hại diện rộng nhờ `carrier_fault_rate` sáng đèn cảnh báo trong ca (`> 0.30` vàng, `> 0.40` đỏ). | Nếu chính hệ thống nguồn `tracking DB` ghi nhầm lý do bão thành `"CARRIER"`, `write_gate` vẫn cho qua; cần kiểm mẫu (`review_sampling_pct`) và đối soát với hãng. |
+| [3] | `lab10/guards.py`: `_gate_file_carrier_fault` khi `strikes >= max_strikes` (`ops_limits.max_auto_strikes_per_carrier_per_day = 2`) → `Verdict.deny` + `ctx.log("guard_deny_carrier_strikes", ...)`; `lab10/monitors.py`: `carrier_fault_rate`, `auto_refund_rate`; `config/operating_gates.json` (`max_queue_wait_minutes: 60`, `alert_channel: "#ops-refund-alerts"`, `pic: NV-TUNG`, `approver_id: NV-HANH`) | Giới hạn thiệt hại + Phát hiện + Vận hành | **NGĂN** ghi vượt `2` lỗi tự động/hãng/ngày và **NGĂN** lỗi `escalate` làm gãy ca đã hoàn tiền (`S3-42`, `S3-43` đạt `100%` pass); **GIẢM** chậm trễ phát hiện bão lỗi qua `carrier_fault_rate` & `auto_refund_rate`. | Khi `strikes >= 2` bị `Verdict.deny` âm thầm (`guard_deny_carrier_strikes`), ticket không đẩy vào `world.queue`, nên nếu hãng thực sự vi phạm hàng loạt ngoài bão lũ thì LogiX có thể bỏ sót khoản truy thu `120.000đ`/lỗi nếu không rà log cuối ca. |
 
 ---
 
@@ -377,7 +377,9 @@ Vẽ lại cây ở C6. Ở mỗi nhánh đã xử lý, thêm một nút `VÀ [g
 
 | Rủi ro | Khả năng | Tác động | Người phụ trách (PIC, một người) | Dấu hiệu (metric nào, ngưỡng nào) | Xử lý | Ảnh hưởng bước đánh giá | Nhóm chức năng (GOVERN / MAP / MEASURE / MANAGE) |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| Chặn êm (`Verdict.deny`) từ lỗi hãng thứ 3+/ngày (`guard_deny_carrier_strikes`) khiến các ca hãng vi phạm thật không vào `world.queue`, gây sót truy thu `120.000đ`/lỗi dù LogiX vẫn tự động hoàn tiền | Trung bình | Trung bình | Hoàng Thế Phong | `auto_refund_rate > 0.70` trong `lab10/monitors.py` (trên S3 hiện `0.833333`) kèm `carrier_fault_rate` bị kìm ở trần (`0.333333`) hoặc mật độ log `guard_deny_carrier_strikes` tăng | Cuối ca tổng hợp các ca có `guard_deny_carrier_strikes` để kế toán (`NV-OANH`) đối soát thu hồi thủ công; nếu `auto_refund_rate > 0.75` liên tiếp 2 ca ở cùng 1 hãng thì **thu hẹp phạm vi** hoàn tự động cho hãng đó về hàng chờ duyệt | Bổ sung kiểm tra cặp `auto_refund_rate` & `carrier_fault_rate` tại `C8`/`C12`: chỉ giữ **Tiếp tục** khi kèm đối soát log cuối ca, ngược lại chuyển **Thu hẹp** | MANAGE |
+| Dữ liệu nguồn `tracking DB` cập nhật trễ hoặc gán nhầm nguyên nhân bão (`FORCE_MAJEURE`) thành `"CARRIER"` làm `_gate_file_carrier_fault` vẫn cho ghi phạt oan | Trung bình | Cao | Đỗ Lý Hoàng Nam | `carrier_fault_rate > 0.30` (VÀNG) hoặc `> 0.40` (ĐỎ) trong `lab10/monitors.py`, hoặc `wrongful_carrier_faults > 0` trong report `eval`/`grade` | Vượt `0.30`: bật kiểm mẫu `20%` theo kho ảnh hưởng (`CT`, `HN`, ...); vượt `0.40` hoặc có `>= 1` ca `wrongful_carrier_faults`: **tạm tắt công tắc `file_carrier_fault`** trên `#ops-refund-alerts` đến khi `tracking DB` sạch mã bão | Ràng buộc trực tiếp ngưỡng `wrongful_carrier_faults_max = 0` trong `acceptance_criteria.json` và quyết định `C12` (**Dừng** nhánh phạt hãng nếu DB chưa sạch) | MEASURE |
+| Thay đổi chính sách mới hoặc lưu lượng bão làm `cost_per_ticket_vnd` vượt trần `7.000đ` / `ROI < 0.4` / chi phí kho cục bộ vượt làm tay (`kho ?` trên nền `10.359đ`) | Thấp | Cao | Lê Danh Giang | `cost_per_ticket_vnd > 7000`, `roi < 0.4`, hoặc `wrongful_refund_vnd > 0` trong report `eval`/`grade` (so ngưỡng đã ký ở `B8`/`C12`) | Rà soát bảng `effective_from`/`effective_to` trước khi phát hành chính sách mới; nếu `cost_per_ticket_vnd > 7000` hoặc `roi < 0.4` trong 1 ngày vận hành thì **chuyển quyết định Gate 1 từ `Tiếp tục` sang `Thu hẹp`** (cắt kho chi phí cao hoặc hạ `auto_limit_vnd`) | Quyết định ngưỡng đạt/trượt tại `C12 · Gate 1 · v2` theo `acceptance_criteria.json` (`cost_per_ticket_vnd_max = 7000`, `roi_min = 0.4`, `wrongful_refund_vnd_max = 0`) | GOVERN |
 
 Quy tắc: **mỗi dòng phải đổi được một quyết định.** Cột "Dấu hiệu" phải là một metric có trong `monitors.py` hoặc trong report.
 
