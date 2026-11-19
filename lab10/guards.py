@@ -121,8 +121,10 @@ def _gate_file_carrier_fault(ctx, action):
     if max_strikes is not None and carrier_id:
         strikes = len(ctx.tools.fault_rows(carrier_id=carrier_id))
         if strikes >= max_strikes:
-            ctx.log("guard_escalate_carrier_strikes", carrier_id=carrier_id, strikes=strikes)
-            return Verdict.escalate("vượt ngưỡng ghi lỗi hãng tự động trong ngày")
+            # Dùng deny thay vì escalate vì issue_refund đã ghi sổ cái trước bước này;
+            # log sự kiện để người vận hành rà soát lại lỗi hãng thứ 3+ mà không làm treo hoàn tiền.
+            ctx.log("guard_deny_carrier_strikes", carrier_id=carrier_id, strikes=strikes)
+            return Verdict.deny("vượt ngưỡng ghi lỗi hãng tự động trong ngày")
     return Verdict.allow()
 
 
