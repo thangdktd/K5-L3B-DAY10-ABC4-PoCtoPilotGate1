@@ -1,12 +1,17 @@
 {
-  "team": "",
-  "members": [],
-  "incident": "",
-  "decision_v1": "",
-  "decision_v2": "",
+  "team": "K5-L3B-DAY10-ABC4-PoCtoPilotGate1",
+  "members": [
+    "NguyenHongThang-2A202603829",
+    "LeDanhGiang-2A202603912",
+    "DoLyHoangNam-2A202603777",
+    "HoangThePhong-2A202603832"
+  ],
+  "incident": "S3",
+  "decision_v1": "Cải tiến thêm",
+  "decision_v2": "Thu hẹp",
   "three_lines": {
-    "environment_assumption": "",
-    "reduce_or_prevent": "",
-    "measure_in_pilot": ""
+    "environment_assumption": "Thiết kế giả định `ctx.as_of`, khoảng hiệu lực chính sách và `delay_cause` trong tracking là chính xác, cập nhật kịp thời và phản ánh đúng nguyên nhân giao trễ; dữ liệu production có thể sai hoặc đến muộn.",
+    "reduce_or_prevent": "`write_gate` NGĂN các thao tác hoàn/ghi lỗi trái với chính sách hiệu lực, thiếu nguyên nhân xác nhận hoặc vượt trần lỗi hãng/ngày khi dữ liệu nguồn đúng; monitor chỉ GIẢM thời gian phát hiện dữ liệu nguồn sai.",
+    "measure_in_pilot": "Vì dữ liệu hiện là mock, pilot thật phải đo độ chính xác và độ trễ của policy/tracking (đặc biệt `delay_cause`), lỗi hoàn/ghi hãng, `carrier_fault_rate`, `auto_refund_rate`, chi phí/ROI và tải hàng chờ, đồng thời xác nhận ticket thiếu kho được chuyển làm tay."
   }
 }
