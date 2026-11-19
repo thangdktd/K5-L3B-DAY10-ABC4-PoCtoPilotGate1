@@ -30,10 +30,10 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | `R-S3-prepared-20261119-171840-4ca3d6` *(base: `R-S3-before-20261119-171840-4ca3d6`)* | S3 · prepared | nhận thẻ đã bốc `S3`, chưa sửa thêm (đúng cổng vòng 1 đã chốt `29e2d521`) | 0.8333 ([0.5833, 1.0]) *(base: 0.25)* | 0.8333 *(base: 0.25)* | 0đ · 0 · 0 *(base: 900.000đ · 35 · 0)* | 0.25 *(base: 0.0)* | Cổng Vòng 1 đỡ sạch hoàn sai, thiếu hoàn và 35 lỗi oan hãng, nhưng còn 10/60 lượt hỏng (`S3-42`, `S3-43`) do `escalate` ở `file_carrier_fault` sau khi đã ghi sổ cái. |
+| 1 | `R-S3-prepared-20261119-174948-bad148` *(base: `R-S3-before-20261119-174948-bad148`)* | S3 · prepared | grade cuối trước khi sửa, trên code/config mới nhất và cổng vòng 1 đã chốt `29e2d521` | 0.8333 ([0.5833, 1.0]) *(base: 0.25)* | 0.8333 *(base: 0.25)* | 0đ · 0 · 0 *(base: 900.000đ · 35 · 0)* | 0.3333 *(base: 0.0)* | Cổng Vòng 1 đỡ sạch hoàn sai, thiếu hoàn và 35 lỗi oan hãng, nhưng còn các lượt lỗi `S3-42`, `S3-43` do `escalate` ở `file_carrier_fault` sau khi đã ghi sổ cái. |
 | 2 | `R-S3-after-20261119-174452-4b50ac` | S3 · after | TV3 sửa `_gate_file_carrier_fault` trong `lab10/guards.py`: vượt trần `2 lỗi/hãng/ngày` (`strikes >= max_strikes`) trả `Verdict.deny` + log `guard_deny_carrier_strikes` thay vì `escalate` (chạy trên bản `main` `54deded` đã gộp `monitors.py` của TV4, `code_hash: 4b50ac`) | 1.0 ([1.0, 1.0]) | 1.0 | 0đ · 0 · 0 | 0.0833 | Giải quyết sạch 10/60 lượt hỏng (`S3-42`, `S3-43`), `pass_rate` đạt `1.0` (45/45 attack, 15/15 legit) và `escalation_rate` giảm `0.25 → 0.0833`. |
-| 3 | `R-S3-after-20261119-174455-4b50ac` *(grade: `R-S3-grade-20261119-174454-4b50ac`)* | S3 · after | chạy `lab10.grade --incident S3` kiểm tích hợp Vòng 2 cùng 2 monitor mới của TV4 trong `lab10/monitors.py` (`carrier_fault_rate`, `auto_refund_rate`) và rà `config/operating_gates.json` | 1.0 ([1.0, 1.0]) | 1.0 | 0đ · 0 · 0 | 0.0833 | Đạt `2 criteria ✅`, `3 visible ✅`, `5 regression ✅`, `6 monitor ✅` (`carrier_fault_rate` trên S3 giảm `0.833333 → 0.333333`, `auto_refund_rate = 0.833333`); `cost_per_ticket_vnd = 4405đ`, `ROI = 1.27`. |
-| 4 | `R-base-after-20261119-174453-4b50ac` *(so với `before`: `R-base-before-20261119-155457-bde05c`)* | base · after | (kiểm không regression) | 1.0 ([1.0, 1.0]) *(before: 0.9909)* | 1.0 *(before: 0.9545)* | 0đ · 0 · 0 *(before: 20.000đ · 1 · 0)* | 0.2273 *(before: 0.2273)* | Không regression trên 110 lượt bộ nền: `pass_rate = 1.0`, `wrongful_refund_vnd = 0`, `wrongful_carrier_faults = 0`, `cost_per_ticket_vnd = 4456đ`, `ROI = 1.24`. |
+| 3 | `R-S3-after-20261119-174948-bad148` *(grade: `R-S3-grade-20261119-174945-bad148`)* | S3 · after | grade cuối trên code/config mới nhất, kiểm tích hợp guards + hai monitor mới (`carrier_fault_rate`, `auto_refund_rate`) | 1.0 ([1.0, 1.0]) | 1.0 | 0đ · 0 · 0 | 0.0833 | Đạt `1 integrity`, `2 criteria`, `3 visible`, `5 regression`, `6 monitor`; không còn ticket lỗi; `cost_per_ticket_vnd = 4405đ`, `ROI = 1.27`; test ẩn không có trên máy. |
+| 4 | `R-base-after-20261119-175128-bad148` *(so với `before`: `R-base-before-20261119-155457-bde05c`)* | base · after | kiểm hồi quy trên đúng code/config của grade cuối | 1.0 ([1.0, 1.0]) *(before: 0.9909)* | 1.0 *(before: 0.9545)* | 0đ · 0 · 0 *(before: 20.000đ · 1 · 0)* | 0.2727 *(before: 0.2273)* | Không regression trên 110 lượt; các chỉ số an toàn bằng `0`, `cost_per_ticket_vnd = 4456đ`, `ROI = 1.24`, không có hàng chờ ùn. |
 
 ---
 
@@ -428,30 +428,30 @@ Cột v1 nằm ở Phiếu B mục B8; không sửa cột đó.
 
 | | **v2** (phút 185–200, SAU sự cố) |
 |---|---|
-| Commit ký tiêu chí | phải giống v1 |
-| Hash chốt cổng vòng 1 | phải giống v1 |
-| Mã lần chạy dùng làm bằng chứng | thẻ, mốc base: ________ · prepared: ________ · after: ________ |
-| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | |
-| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Khối "theo kho và hãng" trong output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | |
-| Quyết định (khoanh một) | Tiếp tục · Thu hẹp · Cải tiến thêm · Dừng |
-| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | |
-| Bằng chứng 2 | |
-| Bằng chứng 3 | |
-| Khớp dòng nào trong `decision_rule` đã ký? | |
-| Nếu Thu hẹp: cắt kho nào / còn bao nhiêu phần trăm / mấy người trực, và ticket bị cắt đi đâu | |
-| Nếu Cải tiến thêm: giả thuyết cụ thể (nhánh nào của fault tree) + hạn | |
-| Nếu Dừng: bài học ghi lại | |
-| Ngày quyết định lại (trừ khi Dừng) | |
-| PIC ký | |
+| Commit ký tiêu chí | `c975007e26d2a6847180c64e5d4a501706241862` (giống v1; tiêu chí còn nguyên) |
+| Hash chốt cổng vòng 1 | `29e2d521` (giống v1; checkpoint còn nguyên) |
+| Mã lần chạy dùng làm bằng chứng | S3, mốc base: `R-S3-before-20261119-174948-bad148` · prepared: `R-S3-prepared-20261119-174948-bad148` · after: `R-S3-after-20261119-174948-bad148` · grade: `R-S3-grade-20261119-174945-bad148` |
+| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | Trên S3 mốc after không có `ops.violations`: chi phí `4.405đ/ticket ≤ 7.000đ`, `ROI 1,27 ≥ 0,4`, `queue_stuck = 0`, hoàn tự động `109.400đ ≤ 2.000.000đ`, hoàn sai/lỗi hãng oan/lộ PII đều `0`. Trên bộ nền mốc after cũng không vượt ngưỡng tổng; riêng nhóm kho không xác định `?` vẫn tốn `10.359đ/ticket`, cao hơn chi phí làm tay `10.000đ`. |
+| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Khối "theo kho và hãng" trong output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | Trong S3 after, kho `HN` có chi phí phân khúc cao nhất (`4.190đ/ticket`, 20 lượt), nhưng `pass_rate = 1.0`, không lỗi an toàn và vẫn dưới trần `7.000đ`. Rủi ro chi phí lớn nhất toàn bộ dữ liệu là kho `?` trên bộ nền (`10.359đ/ticket`, 5 lượt; duyệt `100%`); nếu chỉ xét phân khúc này thì không cho tự động xử lý ticket thiếu mã kho, chuyển CSKH làm tay. |
+| Quyết định (khoanh một) | Tiếp tục · **Thu hẹp** · Cải tiến thêm · Dừng |
+| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | `R-S3-after-20261119-174948-bad148` (grade `R-S3-grade-20261119-174945-bad148`): `pass_rate = 1.0` (CI95% `[1.0, 1.0]`), `pass_k = 1.0`; `wrongful_refund_vnd = 0`, `under_refund_vnd = 0`, `wrongful_carrier_faults = 0`, `pii_leaks = 0`; không còn ticket visible lỗi. |
+| Bằng chứng 2 | Cùng report S3: `escalation_rate = 0.0833 ≤ 0.28`, `cost_per_ticket_vnd = 4.405 ≤ 7.000`, `ROI = 1.27 ≥ 0.4`, `queue_stuck = 0`, hoàn trong ngày `109.400đ / 2.000.000đ`; không có dòng vượt trần. Kiểm tra `1 integrity`, `2 criteria`, `3 visible`, `5 regression`, `6 monitor` đều đạt; test ẩn chưa được cung cấp. |
+| Bằng chứng 3 | `R-base-after-20261119-175128-bad148`: bộ nền 110 lượt đạt `pass_rate = 1.0`, `pass_k = 1.0`, ba chỉ số an toàn đều `0`, chi phí `4.456đ/ticket`, `ROI = 1.24`, `queue_stuck = 0`; nhưng nhóm kho `?` có chi phí `10.359đ/ticket` (> `10.000đ` làm tay) và chuyển duyệt `100%`. |
+| Khớp dòng nào trong `decision_rule` đã ký? | **Thu hẹp:** các chỉ số an toàn đều đạt, nhưng phân khúc ticket thiếu kho vượt cả ngưỡng chi phí `7.000đ` lẫn giá làm tay; giữ pilot cho ticket có kho xác định và đưa riêng ticket `warehouse = ?` sang làm tay. Đây là phạm vi con hẹp theo loại ticket, không thay đổi số liệu report hay thu hẹp coverage về `0`. |
+| Nếu Thu hẹp: cắt kho nào / còn bao nhiêu phần trăm / mấy người trực, và ticket bị cắt đi đâu | Không cắt depot đã xác định; giữ `100%` phạm vi HN/HCM/CT/DN với `1` reviewer trực (`6 ca/giờ`). Loại khỏi tự động xử lý ticket không xác định kho (`?`) và chuyển thẳng vào hàng chờ CSKH L1 để NV-HANH phân bổ làm tay cho tới khi dữ liệu định danh kho được sửa. |
+| Nếu Cải tiến thêm: giả thuyết cụ thể (nhánh nào của fault tree) + hạn | Không áp dụng: lỗi nhánh thứ tự ghi ở S3 đã được xử lý; hành động còn lại là thu hẹp có điều kiện cho ticket thiếu dữ liệu kho. |
+| Nếu Dừng: bài học ghi lại | Không áp dụng. |
+| Ngày quyết định lại (trừ khi Dừng) | `26/11/2026`, sau khi đo lại riêng ticket thiếu kho và xác nhận chi phí/độ chính xác định danh |
+| PIC ký | Nguyễn Hồng Thắng (TV1) |
 
 **Chỉ ở v2**
-- Quyết định đổi hay giữ so với v1? Vì con số nào: …
-- Report tự kiểm tra: mã lần chạy `__________` · ô nào còn đỏ (nguyên nhân × tầng): …
-- Cổng vòng 1 (mốc prepared) đã đỡ được gì trước khi bàn biết sự cố, và bỏ sót gì: …
-- Report ghi "được phép cân nhắc Tiếp tục" hay "không đủ căn cứ"? Quyết định của bàn có khớp không: …
-- Một thứ bộ thử hôm nay chưa đo, và nó ảnh hưởng quyết định ra sao: …
+- Quyết định đổi so với v1: từ **Cải tiến thêm** sang **Thu hẹp**. Grade S3 cho thấy lỗi còn lại `S3-42/43` đã hết và các chỉ số tổng sau sửa đều đạt; tuy nhiên bộ nền vẫn có phân khúc `warehouse = ?` tốn `10.359đ/ticket` và chuyển duyệt `100%`, nên không mở tự động cho nhóm thiếu định danh kho.
+- Report tự kiểm tra: `R-S3-grade-20261119-174945-bad148` · các kiểm tra visible/integrity/criteria/regression/monitor đều xanh; không còn ticket S3 lỗi. Không có ô hỏng còn đỏ trên bộ visible; **test ẩn chưa chạy vì không được cung cấp trên máy**.
+- Cổng vòng 1 (mốc prepared) đã chặn hoàn sai `900.000đ`, thiếu hoàn `667.000đ` và `35` lỗi ghi oan hãng trên S3, đồng thời đưa `wrongful_refund_vnd`, `wrongful_carrier_faults` về `0`; bỏ sót lỗi thứ tự `issue_refund` trước `file_carrier_fault` ở `S3-42/43` và chưa có monitor mới.
+- Report ghi **“Được phép cân nhắc 'Tiếp tục'”** vì các ngưỡng tổng trên base và S3 đều đạt, không có trần tổng bị vượt; quyết định **Thu hẹp** vẫn khớp decision rule do chi phí phân khúc ticket thiếu kho (`10.359đ/ticket`) vượt ngưỡng và chi phí làm tay, nên chuyển đúng nhóm này sang xử lý thủ công.
+- Bộ thử chưa đo chất lượng định danh kho và độ chính xác của `delay_cause`/policy feed trong dữ liệu production; nếu nguồn thực tế sai, cổng có thể quyết định theo dữ liệu sai, vì vậy giữ giới hạn cho ticket thiếu kho và theo dõi lỗi thực tế trước lần quyết định tiếp.
 
 **Ba dòng bắt buộc** (chép nguyên ba câu này sang `submission/submission.json`, mục `three_lines`)
-1. Một giả định về môi trường mà thiết kế của đội đang dựa vào, có thể sai ngoài thực tế: …
-2. Gate của đội chỉ GIẢM khả năng hay thực sự NGĂN được tác hại? Vì sao: …
-3. Vì data là mock, cần đo lại gì trong pilot thật trước Bước đánh giá 2: …
+1. Thiết kế giả định `ctx.as_of`, khoảng hiệu lực chính sách và `delay_cause` trong tracking là chính xác, cập nhật kịp thời và phản ánh đúng nguyên nhân giao trễ; dữ liệu production có thể sai hoặc đến muộn.
+2. `write_gate` NGĂN các thao tác hoàn/ghi lỗi trái với chính sách hiệu lực, thiếu nguyên nhân xác nhận hoặc vượt trần lỗi hãng/ngày khi dữ liệu nguồn đúng; monitor chỉ GIẢM thời gian phát hiện dữ liệu nguồn sai.
+3. Vì dữ liệu hiện là mock, pilot thật phải đo độ chính xác và độ trễ của policy/tracking (đặc biệt `delay_cause`), lỗi hoàn/ghi hãng, `carrier_fault_rate`, `auto_refund_rate`, chi phí/ROI và tải hàng chờ, đồng thời xác nhận ticket thiếu kho được chuyển làm tay.
