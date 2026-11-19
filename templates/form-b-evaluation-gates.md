@@ -309,10 +309,10 @@ Mỗi con số kèm một câu lý do, lấy từ `data/world.json` → `ops_lim
 
 | Khoá | Giá trị bàn đặt | Lý do (một câu, có số) |
 |---|---|---|
-| `business.daily_refund_cap_vnd` | | |
-| `business.cost_budget_per_ticket_vnd` | | |
-| `business.pilot_scope` (all / warehouse / percent) | | |
-| `business.roi_min` | | |
+| `business.daily_refund_cap_vnd` | `2000000` | Khớp đúng trần ngân sách hoàn tự động một ngày `ops_limits.daily_auto_refund_budget_vnd = 2.000.000đ` do Finance quy định nhằm giới hạn rủi ro thâm hụt tài chính. |
+| `business.cost_budget_per_ticket_vnd` | `1500` | Khớp đúng trần chi phí LLM tối đa cho một ticket `ops_limits.max_llm_cost_per_ticket_vnd = 1.500đ` để ngăn ticket dài bất thường làm tăng chi phí máy. |
+| `business.pilot_scope` (all / warehouse / percent) | `{"mode": "all", "warehouses": [], "percent": 100}` | Ở vòng 1 chạy thử trên toàn bộ 100% phạm vi 2 depot (`HN`, `HCM`) để đánh giá tổng thể hành vi hệ thống trước khi có sự cố. |
+| `business.roi_min` | `0.4` | Khớp đúng chỉ số sàn `roi_min` trong Bản tiêu chí đã ký (`acceptance_criteria.json`), đảm bảo hiệu quả kinh tế tiết kiệm hơn làm tay (`10.000đ`/ticket). |
 
 ### B7.5 · Câu 2.10 · Cổng con người, vận hành, pháp lý + Runbook phần 1–3
 
@@ -322,18 +322,18 @@ nguyên nhân trong tracking). Rồi viết runbook dưới đây **khớp với
 
 *Runbook là tờ giấy người trực ca cầm lúc 23h khi có chuyện. Nó trả lời: nhìn con số nào, ngưỡng nào thì làm gì, ai được quyết.
 Phần 1–3 và mục Giờ cao điểm viết ở vòng 1. Phần 4–5 viết ở vòng 2 (Phiếu C mục C11). Mọi con số phải khớp `config/operating_gates.json` và report.*
-*Mỗi phần trả lời bốn câu hỏi: ai chịu trách nhiệm, nhìn gì, ngưỡng nào, làm gì.* **Người viết (vai Vận hành và pháp lý):** ______
+*Mỗi phần trả lời bốn câu hỏi: ai chịu trách nhiệm, nhìn gì, ngưỡng nào, làm gì.* **Người viết (vai Vận hành và pháp lý):** Hoàng Thế Phong (TV4)
 
 #### Runbook 1 · Ai chịu trách nhiệm
 
 | Vai | Tên / mã nhân viên (lấy từ `data/world.json` → `staff`) | Được quyền làm gì | Liên lạc qua kênh nào |
 |---|---|---|---|
-| PIC của trợ lý (một người) | | | |
-| Người duyệt đứng tên các khoản vượt hạn mức | | | |
-| Người giữ công tắc tắt từng thao tác ghi | | | |
-| Người nhận khiếu nại của bên thứ ba (hãng, shop, người nhận quà) | | | |
+| PIC của trợ lý (một người) | Lê Thanh Tùng (`NV-TUNG`) – Giám sát vận hành | Giữ công tắc dừng khẩn cấp trợ lý, điều phối ca trực, quyết định mở/thu hẹp phạm vi pilot và kích hoạt quy trình sự cố. | Kênh nội bộ `#ops-refund-alerts`, hotline vận hành: `0901-TUNG-OPS` |
+| Người duyệt đứng tên các khoản vượt hạn mức | Trần Thị Hạnh (`NV-HANH`) – Trưởng ca CSKH | Duyệt hoặc từ chối các khoản hoàn tiền vượt hạn mức tự động (`> 200.000đ` của `REFUND-v3` hoặc `> 300.000đ`/khách/ngày) do trợ lý chuyển sang. | Kênh CSKH `#cskh-escalations`, hàng chờ duyệt ca CSKH |
+| Người giữ công tắc tắt từng thao tác ghi | Lê Thanh Tùng (`NV-TUNG`) – Giám sát vận hành | Bật/tắt 4 công tắc trong `config/switches.json` (`issue_refund`, `file_carrier_fault`, `notify_carrier`, `send_reply`). | Kênh `#ops-refund-alerts`, giao diện quản trị Config Ops |
+| Người nhận khiếu nại của bên thứ ba (hãng, shop, người nhận quà) | Phạm Kiều Oanh (`NV-OANH`) – Kế toán đối soát | Tiếp nhận phản hồi, đối soát công nợ tuần với hãng vận chuyển và shop; kiểm tra các ca nghi vấn phạt oan hoặc bồi hoàn sai. | Email đối soát `oanh.pk@logix.vn`, kênh `#finance-reconciliation` |
 
-Số người trực duyệt mỗi ca: ___ · Mỗi giờ duyệt được: ___ ca · Phạm vi pilot: ______ (tất cả / kho nào / bao nhiêu phần trăm)
+Số người trực duyệt mỗi ca: **1** · Mỗi giờ duyệt được: **6** ca · Phạm vi pilot: **all (tất cả 100% phạm vi 2 depot)**
 
 #### Runbook 2 · Nhìn con số nào, ngưỡng nào thì làm gì
 
@@ -341,22 +341,35 @@ Mỗi dòng một tín hiệu. Cột "Lấy ở đâu" phải là một dòng tr
 
 | Tín hiệu | Lấy ở đâu | Bình thường | Ngưỡng VÀNG → việc làm | Ngưỡng ĐỎ → việc làm | Ai quyết |
 |---|---|---|---|---|---|
-| Thời gian chờ người duyệt lâu nhất | | | | | |
-| Số ca bị ùn | | | | | |
-| Chi phí mỗi ticket so với làm tay | | | | | |
-| Tổng tiền hoàn tự động trong ngày so với trần | | | | | |
-| Tiền hoàn sai | | | | | |
-| Lỗi ghi oan cho hãng / lộ dữ liệu cá nhân (pháp lý) | | | | | |
-| (tín hiệu riêng của bàn) | | | | | |
+| Thời gian chờ người duyệt lâu nhất | `hàng chờ người duyệt: ... lâu nhất ... phút` trong report `eval` / `ops_facts` | `< 30 phút` | `>= 45 phút`: Báo động ca trực CSKH tập trung giải phóng ticket, chuẩn bị gọi người dự phòng. | `> 60 phút` (vi phạm SLA): Tạm dừng nhận ticket mới vào hàng chờ, điều động thêm 1 reviewer vào ca. | `NV-HANH` (Trưởng ca CSKH) |
+| Số ca bị ùn | `hàng chờ người duyệt: ... ca bị ùn (hạn 60 phút)` trong report | `0 ca` | `1–2 ca`: Reviewer ưu tiên xử lý ngay các ca sắp chạm hạn 60 phút. | `>= 3 ca`: Chuyển tạm thời các ca chuyển tiếp sang làm tay hoàn toàn, PIC xem xét thu hẹp pilot. | `NV-TUNG` (PIC) phối hợp `NV-HANH` |
+| Chi phí mỗi ticket so với làm tay | `chi phí mỗi ticket` trong report | `< 6.000đ` (tiết kiệm hơn làm tay 10.000đ) | `6.000đ – 7.000đ`: Kiểm tra tỉ lệ `escalation_rate` và tiền LLM của các ticket dài, rà soát lại prompt/cache. | `> 7.000đ` (chạm trần đã ký) hoặc `> 10.000đ` (lỗ so với làm tay): Báo cáo TV1/Finance, kích hoạt thu hẹp nhóm ticket đắt tiền. | TV1 & `NV-TUNG` |
+| Tổng tiền hoàn tự động trong ngày so với trần | `tổng hoàn tự động một ngày ... (ngân sách 2000000đ)` trong report | `< 1.200.000đ`/ngày | `1.500.000đ`: Gửi cảnh báo lên `#ops-refund-alerts`, kiểm tra xem có hiện tượng lạm dụng hoặc trễ đơn diện rộng không. | `>= 2.000.000đ` (chạm trần ngày): Khóa tự động hoàn tiền (`issue_refund: false`), chuyển toàn bộ các yêu cầu còn lại sang duyệt tay. | `NV-TUNG` (PIC) |
+| Tiền hoàn sai | `wrongful_refund_vnd` trong report / biên bản đối soát | `0đ` | `> 0đ` nhưng `< 50.000đ`: Tạm ngưng auto-refund ở kho liên quan, kiểm tra lại dữ liệu tracking và chính sách hiệu lực. | `> 50.000đ` hoặc phát hiện lỗi logic hệ thống: Tắt ngay `issue_refund`, đối soát lại toàn bộ sổ cái trong ngày, thông báo cho kế toán `NV-OANH`. | `NV-TUNG` & `NV-OANH` |
+| Lỗi ghi oan cho hãng / lộ dữ liệu cá nhân (pháp lý) | `wrongful_carrier_faults` và `pii_leaks` trong report / kênh hãng | `0` | Nghi ngờ có 1 trường hợp thông báo chứa SĐT người nhận: Tạm dừng gửi `notify_carrier` đến hãng đó để kiểm tra payload. | `>= 1 lỗi ghi oan hãng` hoặc `>= 1 lần lộ PII`: Tắt ngay lập tức `file_carrier_fault` và `notify_carrier`, chuyển xác minh thủ công. | `NV-TUNG` (PIC) |
+| Tỉ lệ chuyển người duyệt (`escalation_rate`) | `tỉ lệ chuyển người duyệt` trong report / `monitors.py` | `< 0.20` | `0.20 – 0.28`: Rà soát phân loại intent, nhắc nhở nhân viên trực ca sẵn sàng. | `> 0.28` (vượt ngưỡng đã ký): Kích hoạt quy trình giảm tải, kiểm tra nguyên nhân agent chuyển người hàng loạt. | `NV-HANH` |
 
 #### Runbook 3 · Điều kiện dừng và cách dừng
 
-- Dừng một phần (tắt một thao tác ghi, thu hẹp phạm vi) khi: …
-- Dừng hẳn khi: …
-- Cách dừng, từng bước (công tắc nào trong `config/switches.json`, dòng nào trong `config/operating_gates.json`): …
-- Từ tín hiệu đỏ đến lúc dừng xong tối đa ____ phút; người bấm: ____
-- Khi đã dừng, ticket đang chờ đi đâu, ai xử lý: …
-- Điều kiện để bật lại, ai ký: …
+- Dừng một phần (tắt một thao tác ghi, thu hẹp phạm vi) khi:
+  + Phát sinh `1` lỗi ghi oan cho hãng vận chuyển hoặc khiếu nại phạt sai: tắt `file_carrier_fault` trong `config/switches.json`.
+  + Phát sinh `1` sự cố rò rỉ dữ liệu cá nhân (tên, SĐT, địa chỉ người nhận) sang hãng: tắt `notify_carrier` trong `config/switches.json`.
+  + Một kho cụ thể có tỉ lệ lỗi cao hoặc chi phí `> 10.000đ`: sửa `business.pilot_scope` từ `{"mode": "all"}` sang loại trừ kho đó (ví dụ `"mode": "warehouse"`, chỉ giữ kho an toàn).
+- Dừng hẳn khi:
+  + Tổng tiền hoàn tự động trong ngày chạm trần `2.000.000đ`.
+  + Có từ `2` chỉ số an toàn bị vi phạm cùng lúc (`wrongful_refund_vnd > 0` và `wrongful_carrier_faults > 0`).
+  + Hàng chờ người duyệt bị tê liệt (`queue_stuck >= 3` ca và thời gian chờ `> 90 phút`) không giải tỏa được.
+- Cách dừng, từng bước (công tắc nào trong `config/switches.json`, dòng nào trong `config/operating_gates.json`):
+  1. *Bước 1:* Mở file `config/switches.json`, đổi `"issue_refund": false` và `"file_carrier_fault": false` (để dừng ngay các thao tác tài chính/pháp lý không thể đảo ngược).
+  2. *Bước 2:* Nếu cần dừng toàn diện, đổi tiếp `"notify_carrier": false` và `"send_reply": false` để ngắt hoàn toàn mọi tác vụ tự động ra bên ngoài.
+  3. *Bước 3:* Trong `config/operating_gates.json`, sửa `pilot_scope` về `{"percent": 0}` nếu muốn chuyển 100% luồng tiếp nhận ticket về CSKH làm tay.
+  4. *Bước 4:* Đăng thông báo khẩn cấp lên kênh `#ops-refund-alerts` thông báo hệ thống đã chuyển sang chế độ thủ công.
+- Từ tín hiệu đỏ đến lúc dừng xong tối đa `5` phút; người bấm: Lê Thanh Tùng (`NV-TUNG`) – Giám sát vận hành.
+- Khi đã dừng, ticket đang chờ đi đâu, ai xử lý: Toàn bộ ticket đang chờ trong hàng đợi và các ticket mới phát sinh sẽ được chuyển hướng thẳng vào hàng chờ CSKH cấp 1 (`L1-CSKH Queue`), Trưởng ca CSKH Trần Thị Hạnh (`NV-HANH`) phân bổ nhân viên CSKH xử lý thủ công theo quy trình chuẩn hiện hành (chi phí 10.000đ/ticket).
+- Điều kiện để bật lại, ai ký:
+  + Nhóm kỹ thuật (TV3) và vận hành (TV4) đã tìm ra nguyên nhân gốc rễ, sửa xong code/config và kiểm thử pass 100% bài test hồi quy.
+  + Kế toán đối soát (`NV-OANH`) xác nhận đã khớp sổ cái và bồi hoàn thỏa đáng các bên bị ảnh hưởng.
+  + Biên bản nghiệm thu khắc phục sự cố phải có chữ ký phê duyệt của **cả Trưởng nhóm (Nguyễn Hồng Thắng) và Giám sát vận hành (Lê Thanh Tùng - `NV-TUNG`)**.
 
 ### B7.6 · Giờ cao điểm (bắt buộc với thẻ S4; các thẻ khác nên có)
 
@@ -364,11 +377,11 @@ Lượng ticket có thể dồn gấp ba trong một giờ (ngày sale, sau bão
 
 | Câu hỏi | Trả lời (có số, có tên) |
 |---|---|
-| Giờ cao điểm là khi nào, bao nhiêu ticket mỗi giờ (dựa vào `ops_facts`)? | |
-| Ai trực giờ cao điểm, mấy người (khớp `operations.reviewers_on_shift`)? | |
-| Ngưỡng nào thì **gọi thêm người** (hàng chờ bao nhiêu ca, chờ lâu nhất bao nhiêu phút)? Ai gọi? | |
-| Ngưỡng nào thì **thu hẹp** phạm vi (khoá `business.pilot_scope`) hoặc **tắt** một thao tác ghi (`config/switches.json`)? Ai quyết? | |
-| Thêm người thì chi phí mỗi ticket và ROI thay đổi thế nào (đọc report)? | |
+| Giờ cao điểm là khi nào, bao nhiêu ticket mỗi giờ (dựa vào `ops_facts`)? | Giờ cao điểm là các khung giờ sale (11h–13h, 20h–22h) hoặc ngày thời tiết cực đoan; lượng ticket tăng gấp 3 so với bình thường, tương đương khoảng `18–20 ticket/giờ` (bình thường cả ca 480 phút chỉ có ~22 ticket, cao điểm dồn ~18 ticket chỉ trong 1 giờ). |
+| Ai trực giờ cao điểm, mấy người (khớp `operations.reviewers_on_shift`)? | Bình thường bố trí `1 người trực` (`operations.reviewers_on_shift = 1`), xử lý được `6 ca/giờ`. Vào khung giờ cao điểm đã báo trước, trưởng ca CSKH Trần Thị Hạnh (`NV-HANH`) bố trí thêm 1 nhân sự dự phòng chuyển sang trực chính (tổng cộng `2 người trực`). |
+| Ngưỡng nào thì **gọi thêm người** (hàng chờ bao nhiêu ca, chờ lâu nhất bao nhiêu phút)? Ai gọi? | Khi hàng chờ người duyệt chạm ngưỡng `>= 4 ca` đang chờ hoặc thời gian chờ của ca lâu nhất chạm mốc `>= 35 phút` (tiệm cận ngưỡng vàng 45 phút). Người ra quyết định gọi thêm người: Trần Thị Hạnh (`NV-HANH`) – Trưởng ca CSKH. |
+| Ngưỡng nào thì **thu hẹp** phạm vi (khoá `business.pilot_scope`) hoặc **tắt** một thao tác ghi (`config/switches.json`)? Ai quyết? | Khi đã huy động thêm người nhưng hàng chờ vẫn vượt `>= 8 ca` hoặc thời gian chờ lâu nhất chạm `50 phút` (sắp vi phạm SLA 60 phút): thu hẹp ngay `pilot_scope.percent` xuống `50%` hoặc tạm tắt `file_carrier_fault` để giảm tải nghiệp vụ phức tạp. Người quyết định: Lê Thanh Tùng (`NV-TUNG`) – Giám sát vận hành. |
+| Thêm người thì chi phí mỗi ticket và ROI thay đổi thế nào (đọc report)? | Thêm 1 người trực ca tốn thêm phí giữ chỗ `reviewer_standby_fee_vnd = 30.000đ/ca` (`ops_facts`). Nếu khối lượng ticket cao điểm tăng lên 60 ticket/ca, chi phí giữ chỗ phân bổ chỉ tốn `500đ/ticket`. Nhờ có `operations.decision_note = true`, mỗi ca kiểm lại chỉ tốn `4.000đ` (0.4 ca công), giúp giải tỏa hàng chờ nhanh mà chi phí trung bình toàn ca chỉ tăng nhẹ lên ~`4.500đ – 4.800đ/ticket` (vẫn dưới trần `7.000đ`), ROI vẫn duy trì mức cao `~1.2 – 1.3` (vượt xa sàn `0.4`). |
 
 ---
 
