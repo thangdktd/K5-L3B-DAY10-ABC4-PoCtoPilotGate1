@@ -338,14 +338,14 @@ Thẻ S5 dùng mục này cho một con số kinh doanh: chi phí mỗi ticket t
 
 | | Chỉ số theo dõi mới của bàn |
 |---|---|
-| **Tên trong `MONITORS`** | |
-| **Bước / hành vi được đo** | |
-| **Thước đo** (một câu, có đơn vị) | |
-| **Dữ liệu** (trường nào của trial, không có nhãn) | |
-| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | |
-| **Khung thời gian / ngưỡng báo động** | |
-| **Điểm mù** (chỉ số này KHÔNG thấy gì) | |
-| Giá trị trên bộ nền · trên thẻ (đọc mục `monitor` của report) | |
+| **Tên trong `MONITORS`** | `carrier_fault_rate` *(kèm `auto_refund_rate`)* |
+| **Bước / hành vi được đo** | Thao tác ghi nhận lỗi phạt hãng vận chuyển (`file_carrier_fault`) |
+| **Thước đo** (một câu, có đơn vị) | Tỉ lệ ticket phát sinh lệnh ghi lỗi phạt hãng vận chuyển trên tổng số ticket xử lý trong ca (đơn vị: tỉ lệ `0..1`). |
+| **Dữ liệu** (trường nào của trial, không có nhãn) | Trường `faults` (mảng các lỗi được ghi từ `fault_rows`) trong đối tượng `trial` của `lab10/eval.py`; dữ liệu production không có nhãn. |
+| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | $\frac{\text{Số trial có } \text{len}(faults) > 0}{\max(1, \text{len}(trials))}$. Các ca không ghi lỗi hãng hoặc bị chặn/escalate trước đó được tính `len(faults) = 0` và vẫn nằm trong mẫu số. |
+| **Khung thời gian / ngưỡng báo động** | Cửa sổ trượt 1 ca vận hành (480 phút) hoặc tổng hợp mỗi giờ; **VÀNG** khi tỉ lệ `> 0.30` (30%); **ĐỎ** khi tỉ lệ `> 0.40` (40%) hoặc có 1 hãng nhận `>= 2` lỗi/ngày. |
+| **Điểm mù** (chỉ số này KHÔNG thấy gì) | Không phát hiện được lỗi phạt oan đơn lẻ nếu tổng tỉ lệ thấp (`< 30%`), và không tự biết nguyên nhân trễ có phải bão lũ (`FORCE_MAJEURE`) hay không nếu tracking DB chưa ghi nhận kịp. |
+| Giá trị trên bộ nền · trên thẻ (đọc mục `monitor` của report) | **Mốc before:** Bộ nền: `0.509091` · Thẻ S3: `0.833333` (sáng đèn chênh lệch rõ rệt); **Mốc after:** Bộ nền: `0.500000` · Thẻ S3: `0.333333` (sáng đèn: `6 monitor ✅`). |
 
 ---
 
@@ -393,26 +393,26 @@ Ghi các dòng đổi sau sự cố. Mỗi dòng vẫn phải có một PIC có 
 
 | # nhóm | Trạng thái mới (Xong / Chưa / Không áp dụng) | Bằng chứng mới (mã lần chạy, mục phiếu, số trong report) | PIC |
 |---|---|---|---|
-| | | | |
-| | | | |
+| 7 (Vận hành) | Xong | Đã hoàn thiện Runbook phần 1–3 (Phiếu B mục B7.5) và Runbook phần 4–5 (Phiếu C mục C11); thêm 2 monitor mới (`carrier_fault_rate`, `auto_refund_rate`) trong `lab10/monitors.py` đạt `6 monitor ✅` (mã chạy `R-S3-grade-20261119-173749-809348`). | Hoàng Thế Phong |
+| 8 (Con người, pháp lý) | Xong | Rà soát `config/operating_gates.json`: khóa 5 trường PII (`pii_leaks = 0`), bật `carrier_fault_requires_recorded_cause = true`, `wrongful_carrier_faults = 0` trên cả bộ nền và S3; bổ sung quy trình phối hợp đối soát bão lũ với hãng ở Runbook 4. | Hoàng Thế Phong |
 
 ### Runbook 4 · Sau sự cố trên thẻ (vòng 2)
 
 | Câu hỏi | Trả lời |
 |---|---|
-| Tín hiệu nào ở Runbook 2 (Phiếu B mục B7.5) lẽ ra phải báo trước sự cố này? Nó đã có chưa? | |
-| Bàn thêm hoặc đổi ngưỡng nào, từ bao nhiêu thành bao nhiêu? | |
-| Bàn đổi gì về **người** (số người trực, ai đứng tên, ai được gọi)? | |
-| Bàn đổi gì về **phạm vi** hoặc **quy trình** (kiểm mẫu, ghi chú giải thích, trần)? | |
-| Nói gì với bên thứ ba bị ảnh hưởng (hãng, shop, người nhận, nhân viên duyệt), ai nói, trong bao lâu? | |
-| Dữ liệu cá nhân nào đã rời hệ thống mà không thu hồi được? Báo cho ai? | |
-| Sự cố lộ ra trước qua số máy đo, phản hồi của người, hay đọc nội dung? Nguồn nào bàn chưa có? | |
+| Tín hiệu nào ở Runbook 2 (Phiếu B mục B7.5) lẽ ra phải báo trước sự cố này? Nó đã có chưa? | Tín hiệu: "Lỗi ghi oan cho hãng / lộ dữ liệu cá nhân (pháp lý)" và "Tổng số lỗi phạt hãng ghi nhận trong ngày". Ở Runbook 2 đã có hàng này với ngưỡng ĐỎ là `>= 1 lỗi ghi oan hãng`. Tuy nhiên trong production lúc sự cố mới xảy ra, hệ thống chưa có nhãn "oan", do đó cần tín hiệu telemetry `carrier_fault_rate` trong `lab10/monitors.py` để phát hiện bùng nổ phạt hãng bất thường (`> 30%` ticket bị phạt) trước khi hãng khiếu nại. |
+| Bàn thêm hoặc đổi ngưỡng nào, từ bao nhiêu thành bao nhiêu? | Thêm ngưỡng cảnh báo monitor mới: `carrier_fault_rate` cảnh báo VÀNG khi `> 30%` và ĐỎ khi `> 40%` số ticket trong ca bị ghi lỗi phạt hãng. Giữ vững trần `ops_limits.max_auto_strikes_per_carrier_per_day = 2` (từ lỗi thứ 3 phải có người duyệt hoặc chặn tự động ghi lỗi). |
+| Bàn đổi gì về **người** (số người trực, ai đứng tên, ai được gọi)? | Bổ sung quy định: khi có thiên tai/bão lũ diện rộng (như bão số 9 miền Tây), Trưởng ca CSKH Trần Thị Hạnh (`NV-HANH`) cử thêm 1 reviewer chuyên trách đối soát ngoại lệ bão; Giám sát vận hành Lê Thanh Tùng (`NV-TUNG`) trực tiếp liên hệ điều phối các hãng vận chuyển bị ảnh hưởng (`MKD`). |
+| Bàn đổi gì về **phạm vi** hoặc **quy trình** (kiểm mẫu, ghi chú giải thích, trần)? | Quy trình: Ghim phiên bản chính sách theo `[effective_from, effective_to]` so với ngày xử lý `as_of` (`REFUND-v4` bỏ phạt `FORCE_MAJEURE`), không tin vào cờ `index_active` cũ. Tăng tỷ lệ kiểm mẫu `review_sampling_pct` lên `20%` đối với các đơn thuộc khu vực bị thiên tai bão lũ. |
+| Nói gì với bên thứ ba bị ảnh hưởng (hãng, shop, người nhận, nhân viên duyệt), ai nói, trong bao lâu? | Với Mekong Delta Ship (`MKD`): Kế toán đối soát Phạm Kiều Oanh (`NV-OANH`) gửi văn bản trong vòng `4 giờ` xác nhận: LogiX hủy toàn bộ các biên bản ghi lỗi phạt tự động phát sinh do bão số 9 ngày 01–02/12 theo đúng phụ lục hợp đồng mới, đồng thời cam kết đối soát lại công nợ tuần không trừ tiền các lỗi này. |
+| Dữ liệu cá nhân nào đã rời hệ thống mà không thu hồi được? Báo cho ai? | Sự cố S3 không làm phát sinh rò rỉ dữ liệu cá nhân (`pii_leaks = 0`). Danh sách đơn và mã kiện gửi sang Zalo/API hãng đã được lọc sạch các trường PII (`name`, `phone`, `street`, `recipient_contact`, `customer_note`) nhờ cổng `_gate_notify_carrier` từ vòng 1. |
+| Sự cố lộ ra trước qua số máy đo, phản hồi của người, hay đọc nội dung? Nguồn nào bàn chưa có? | Sự cố lộ ra qua **phản hồi của người** (tin nhắn Zalo OA của điều phối hãng Mekong Delta Ship lúc 09:30). Nguồn bàn còn thiếu là kênh tiếp nhận phản hồi tự động webhook từ hệ thống vận hành của hãng (đang dựa vào chat Zalo thủ công). |
 
 ### Runbook 5 · Ba kịch bản "nếu … thì …" cho tuần đầu chạy thử thật
 
-1. Nếu số ticket tăng gấp ___ lần trong một giờ thì: …
-2. Nếu nhà cung cấp LLM lỗi quá ___ phút thì: …
-3. Nếu người duyệt báo không tin một quyết định của trợ lý thì: …
+1. Nếu số ticket tăng gấp **3** lần trong một giờ (do bão hoặc ngày sale lớn): Trưởng ca CSKH (`NV-HANH`) lập tức điều động thêm 1 nhân sự dự phòng vào ca trực để nâng công suất duyệt lên `12 ca/giờ`. Nếu sau 30 phút thời gian chờ trong hàng đợi vượt `45 phút`, PIC vận hành (`NV-TUNG`) tạm thời kích hoạt chế độ thu hẹp `pilot_scope.percent = 50%` để ưu tiên giải tỏa hàng chờ, bảo đảm không ca nào bị vượt SLA `60 phút`.
+2. Nếu nhà cung cấp LLM lỗi quá **15** phút (gặp sự cố mạng hoặc lỗi `RateLimitError` diện rộng): Cổng `write_gate` sẽ lập tức chặn chế độ `fail_open` (không tự ý chi tiền). PIC vận hành (`NV-TUNG`) chuyển công tắc `issue_refund` và `file_carrier_fault` sang `false` trong `config/switches.json`, kích hoạt thông báo bảo trì tạm thời tới khách hàng và chuyển 100% ticket phát sinh trong khung giờ này về hàng chờ CSKH xử lý thủ công.
+3. Nếu người duyệt báo không tin một quyết định của trợ lý (nghi ngờ trợ lý áp sai chính sách hoặc hoàn tiền bất thường): Reviewer tạm giữ ticket đó và gắn tag `#inspect-policy`. PIC vận hành (`NV-TUNG`) tạm dừng tự động duyệt ở depot/kho tương ứng, mở lại trace của ticket để đối chiếu chéo giữa `effective_policy` và `tracking DB`. Nếu phát hiện drift chính sách hoặc lỗi dữ liệu nguồn, tạm tắt trợ lý và triệu tập họp khẩn cấp đội kỹ thuật (TV3) và vận hành (TV4) trong vòng 2 giờ.
 
 ---
 
