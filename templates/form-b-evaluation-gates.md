@@ -30,8 +30,8 @@ Mọi con số trong quyết định Gate 1 phải trỏ về một dòng ở đ
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `R-base-before-20261119-155457-bde05c` | base · base | (baseline, chưa có cổng) | 0.9909 ([0.9727, 1.0]) | 0.9545 | 20000đ · 1 · 0 | 0.2273 | Chưa đạt tiêu chí an toàn do `T-002@55` tin số ngày trễ khách khai (5 vs 2 ngày DB), làm hoàn sai 20.000đ và phạt oan VNX 1 lỗi. |
-| 2 | | base · after | (cổng vòng 1, thử trước khi chốt) | | | | | |
-| 3 | | base · prepared | (cổng vòng 1 đã chốt) | | | | | |
+| 2 | `R-base-after-20261119-170422-4ca3d6` | base · after | (chạy kiểm chứng cổng vòng 1 trước khi chốt v1) | 1.0000 ([1.0000, 1.0000]) | 1.0000 | 0đ · 0 · 0 | 0.2273 | Cả 110 lượt đạt, không có lỗi an toàn; riêng phân khúc kho `?` tốn 10.359đ/ticket và chuyển duyệt 100%, cần xử lý trước khi mở rộng. |
+| 3 | `R-base-prepared-20261119-164758-4ca3d6` | base · prepared | (cổng vòng 1 đã chốt) | 1.0000 ([1.0000, 1.0000]) | 1.0000 | 0đ · 0 · 0 | 0.2273 | Mốc prepared xác nhận cả 5 chỉ số bắt buộc và 3 ngưỡng vận hành/kinh doanh đều đạt; chưa có bằng chứng trên bộ sự cố. |
 | 4 | | | | | | | | |
 
 ---
@@ -276,9 +276,9 @@ python3 -m unittest discover -s tests
 
 | # | Cổng (hàm và nhánh, ví dụ `write_gate` khi `tool == "issue_refund"`) | Ứng với dòng nào ở B6 / B4 | Chặn điều gì, dựa vào nguồn sự thật nào | Mã lần chạy `base · after` | Ca đang đúng nào bị hỏng? (phải là "không") |
 |---|---|---|---|---|---|
-| 1 | `pre_guard(ctx)` (ghim `policy_id`) | B6.3 · B3 (drift policy) | Ghim đúng phiên bản chính sách hiệu lực theo `ctx.as_of` bằng `H.effective_policy(lookup_policies(), ctx.as_of)` (`REFUND-v3`). | `R-base-after-20261119-162606-a1f53e` | không |
-| 2 | `write_gate` khi `tool == "issue_refund"` (`_gate_issue_refund`) | B6.1 · B4 (`WRONG`, `INVALID`, `PERTURBED`, `INCAPABLE`) | Chặn `fail_open`, hoàn trùng (`ledger_rows`, `refund_status`), tính lại mức hoàn theo `H.db_delay_days` & `H.entitlement_vnd`, giữ `payer = "LOGIX"`, xác thực `approval_id` còn hạn & đúng đơn, kiểm trần khách/ngày (`300.000đ`) và trần ngày (`ctx.gates.business.daily_refund_cap_vnd`). | `R-base-after-20261119-162606-a1f53e` | không |
-| 3 | `write_gate` khi `tool == "file_carrier_fault"` & `tool == "notify_carrier"` | B6.2 · B4 (`INCOMPLETE`, `PERTURBED`) | Chặn ghi lỗi oan hãng khi `H.carrier_at_fault` không thỏa hoặc thiếu `delay_cause`; chuyển người từ lỗi thứ 3/ngày; lọc trường PII/ngoài `carrier_notice_fields` và chuỗi `>= 9` chữ số (`H.digits`) trước khi gửi hãng. | `R-base-after-20261119-162606-a1f53e` | không |
+| 1 | `pre_guard(ctx)` (ghim `policy_id`) | B6.3 · B3 (drift policy) | Ghim đúng phiên bản chính sách hiệu lực theo `ctx.as_of` bằng `H.effective_policy(lookup_policies(), ctx.as_of)` (`REFUND-v3`). | `R-base-after-20261119-170422-4ca3d6` | không |
+| 2 | `write_gate` khi `tool == "issue_refund"` (`_gate_issue_refund`) | B6.1 · B4 (`WRONG`, `INVALID`, `PERTURBED`, `INCAPABLE`) | Chặn `fail_open`, hoàn trùng (`ledger_rows`, `refund_status`), tính lại mức hoàn theo `H.db_delay_days` & `H.entitlement_vnd`, giữ `payer = "LOGIX"`, xác thực `approval_id` còn hạn & đúng đơn, kiểm trần khách/ngày (`300.000đ`) và trần ngày (`ctx.gates.business.daily_refund_cap_vnd`). | `R-base-after-20261119-170422-4ca3d6` | không |
+| 3 | `write_gate` khi `tool == "file_carrier_fault"` & `tool == "notify_carrier"` | B6.2 · B4 (`INCOMPLETE`, `PERTURBED`) | Chặn ghi lỗi oan hãng khi `H.carrier_at_fault` không thỏa hoặc thiếu `delay_cause`; chuyển người từ lỗi thứ 3/ngày; lọc trường PII/ngoài `carrier_notice_fields` và chuỗi `>= 9` chữ số (`H.digits`) trước khi gửi hãng. | `R-base-after-20261119-170422-4ca3d6` | không |
 
 ### B7.2 · Câu 2.7 · Hai bước tránh rò rỉ dữ liệu
 
@@ -406,22 +406,22 @@ bao nhiêu thời gian? (3) Có phần nào của dự án không nên làm ti�
 
 | | **v1** (phút 105–115, TRƯỚC khi nhận thẻ sự cố) |
 |---|---|
-| Commit ký tiêu chí (message `Sign acceptance criteria`; hash commit, tuỳ chọn) | |
-| Hash chốt cổng vòng 1 (8 ký tự lệnh `lab10.checkpoint` in ra, tuỳ chọn) | |
-| Mã lần chạy dùng làm bằng chứng | bộ nền, mốc base: ________ · bộ nền với cổng vòng 1 (prepared): ________ |
-| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | |
-| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Đọc khối "theo kho và hãng" ở cuối output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | |
-| Quyết định (khoanh một) | Tiếp tục · Thu hẹp · Cải tiến thêm · Dừng |
-| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | |
-| Bằng chứng 2 | |
-| Bằng chứng 3 | |
-| Khớp dòng nào trong `decision_rule` đã ký? | |
-| Nếu Thu hẹp: cắt phần nào, vì sao | |
-| Nếu Cải tiến thêm: giả thuyết cụ thể + hạn | |
-| Nếu Dừng: bài học ghi lại | |
-| Một bằng chứng còn thiếu (thứ bộ nền chưa đo được) | |
-| Ngày quyết định lại (trừ khi Dừng) | |
-| PIC ký | |
+| Commit ký tiêu chí (message `Sign acceptance criteria`; hash commit, tuỳ chọn) | `c975007e26d2a6847180c64e5d4a501706241862` |
+| Hash chốt cổng vòng 1 (8 ký tự lệnh `lab10.checkpoint` in ra, tuỳ chọn) | `29e2d521` |
+| Mã lần chạy dùng làm bằng chứng | bộ nền, mốc base: `R-base-before-20261119-155457-bde05c` · bộ nền với cổng vòng 1 (after): `R-base-after-20261119-170422-4ca3d6` · mốc đã chốt (prepared): `R-base-prepared-20261119-164758-4ca3d6` |
+| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | Không có `ops.violations`; tuy vậy phân khúc kho `?` có chi phí `10.359đ/ticket` cao hơn làm tay (`10.000đ`) và tỉ lệ chuyển duyệt `100%`. |
+| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Đọc khối "theo kho và hãng" ở cuối output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | Kho `?` (5 lượt, chi phí `10.359đ/ticket`, cao hơn làm tay); nếu chỉ xét phân khúc này thì không nên tự động hóa, nên chuyển thủ công trong khi kiểm tra nguyên nhân thiếu định danh kho. |
+| Quyết định (khoanh một) | **Cải tiến thêm** · Tiếp tục · Thu hẹp · Dừng |
+| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | `R-base-prepared-20261119-164758-4ca3d6`: `pass_rate 1.0000` (CI95% `[1.0000, 1.0000]`), `pass_k 1.0000`; đạt cả 5 chỉ số bắt buộc, gồm 3 chỉ số an toàn đều bằng `0`. |
+| Bằng chứng 2 | Cùng report: `escalation_rate 0.2273 ≤ 0.28`, `cost_per_ticket_vnd 4.456 ≤ 7.000`, `roi 1.24 ≥ 0.4`, `queue_stuck 0`, `ops.violations` rỗng. |
+| Bằng chứng 3 | `R-base-after-20261119-170422-4ca3d6`: 110/110 lượt đạt, không có hoàn sai, lỗi hãng oan hay lộ PII; nhưng phân khúc `?` tốn `10.359đ/ticket` và chuyển duyệt `100%`. |
+| Khớp dòng nào trong `decision_rule` đã ký? | **Cải tiến thêm:** có giả thuyết xử lý cụ thể ngoài model cho nhóm `?`; chưa thể chọn Tiếp tục vì chưa có bằng chứng trên bộ sự cố, vốn là điều kiện trong decision rule. |
+| Nếu Thu hẹp: cắt phần nào, vì sao | Không áp dụng cho v1; tạm giữ phạm vi hiện tại trong đánh giá, ưu tiên xử lý/rà soát thủ công các ticket không xác định được kho trước khi mở rộng. |
+| Nếu Cải tiến thêm: giả thuyết cụ thể + hạn | Giả thuyết: định tuyến ticket có kho `?` sang quy trình thủ công ngay từ đầu để tránh chi phí hệ thống cộng thêm vào ca vốn chuyển duyệt `100%`; đo lại chi phí theo phân khúc và giữ các chỉ số an toàn ở `0`. Hạn kiểm tra lại: `26/11/2026`, đồng thời đánh giá bộ sự cố trước khi quyết định tiếp tục. |
+| Nếu Dừng: bài học ghi lại | Không áp dụng. |
+| Một bằng chứng còn thiếu (thứ bộ nền chưa đo được) | Kết quả trên bộ sự cố và việc định tuyến nhóm kho `?` có giảm chi phí mà không làm phát sinh lỗi an toàn hay không. |
+| Ngày quyết định lại (trừ khi Dừng) | `26/11/2026` |
+| PIC ký | Nguyễn Hồng Thắng (TV1) |
 
 Xong v1 thì lưu và đẩy một bản (sau mốc này không sửa cột v1):
 
