@@ -1,6 +1,6 @@
 # Phiếu C · Sự cố và quyết định v2 · Khối 3 (phút 125–200)
 
-**Bàn:** ______ · **Thẻ đã bốc:** ___ *(để trống tới phút 125; bốc số xong thì ghi đúng số đó, ví dụ `S3`. Lab Coach đối chiếu với sổ; lệnh tự kiểm tra in dòng này trong report.)*
+**Bàn:** K5-L3B-DAY10-ABC4-PoCtoPilotGate1 · **Thẻ đã bốc:** S3 *(TV2 Lê Danh Giang phụ trách C0–C6, C9–C10; TV3 Đỗ Lý Hoàng Nam phụ trách C7; TV4 Hoàng Thế Phong phụ trách C8, C11; TV1 Nguyễn Hồng Thắng phụ trách C12)*
 
 Mở `incidents/Sx/card.md` của đúng số đã bốc. Các bước trên thẻ trỏ về đúng mục trong phiếu này. Mục C3 chỉ điền phần ứng với
 số thẻ của bàn; các phần khác để trống.
@@ -30,7 +30,7 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | | Sx · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | | | | | |
+| 1 | `R-S3-prepared-20261119-171840-4ca3d6` *(base: `R-S3-before-20261119-171840-4ca3d6`)* | S3 · prepared | nhận thẻ đã bốc `S3`, chưa sửa thêm (đúng cổng vòng 1 đã chốt `29e2d521`) | 0.8333 ([0.5833, 1.0]) *(base: 0.25)* | 0.8333 *(base: 0.25)* | 0đ · 0 · 0 *(base: 900.000đ · 35 · 0)* | 0.25 *(base: 0.0)* | Cổng Vòng 1 đỡ sạch hoàn sai, thiếu hoàn và 35 lỗi oan hãng, nhưng còn 10/60 lượt hỏng (`S3-42`, `S3-43`) do `escalate` ở `file_carrier_fault` sau khi đã ghi sổ cái. |
 | 2 | | Sx · after | | | | | | |
 | 3 | | Sx · after | | | | | | |
 | 4 | | base · after | (kiểm không regression) | | | | | |
@@ -47,19 +47,24 @@ Chạy **trước khi sửa bất cứ thứ gì**:
 python3 -m lab10.grade --incident Sx
 ```
 
-- Mã lần chạy grade: `__________` · base: `__________` · prepared: `__________`
-- Cổng vòng 1 đỡ được ô / con số nào (so cột base với cột prepared): …
-- Khối kinh doanh và vận hành còn dòng nào vượt trần: …
+- Mã lần chạy grade: `R-S3-grade-20261119-171839-4ca3d6` · base: `R-S3-before-20261119-171840-4ca3d6` · prepared: `R-S3-prepared-20261119-171840-4ca3d6`
+- Cổng vòng 1 đỡ được ô / con số nào (so cột base với cột prepared):
+  - `pass_rate` tăng từ `0.25` (15/60) → `0.8333` (50/60); `pass_k` tăng từ `0.25` → `0.8333`.
+  - `wrongful_refund_vnd` giảm từ `900.000đ` → `0đ` (đỡ ca `S3-04`); `under_refund_vnd` giảm từ `667.000đ` → `0đ` (đỡ `S3-02`, `S3-03`).
+  - `wrongful_carrier_faults` giảm từ `35` lỗi (trong đó `MKD` bị oan `25` lỗi, `DNB` `5`, `VNX` `5`) → `0` lỗi (đỡ sạch `S3-01`, `S3-05`, `S3-20`, `S3-21`, `S3-42`, `S3-43`).
+  - `ROI` đảo chiều từ `-2.59` (lỗ ròng `-97.759đ`/ngày) → `0.65` (lãi ròng `47.341đ`/ngày, chi phí `6.055đ`/ticket ≤ trần `7.000đ`).
+  - Còn tồn tại đúng `10/60` lượt hỏng ở `S3-42@11..55` và `S3-43@11..55` (vì gọi `escalate` ở bước `file_carrier_fault` sau khi `issue_refund` đã ghi sổ cái).
+- Khối kinh doanh và vận hành còn dòng nào vượt trần: Không có dòng `vượt trần` nào (`ops.violations` rỗng: `0` ca ùn, chờ lâu nhất `0.0` phút, chi phí `6.055đ ≤ 7.000đ`, `ROI 0.65 ≥ 0.4`, `0` kho đắt hơn làm tay trên `S3`). Tuy nhiên chưa đạt 2 ngưỡng chất lượng đã ký (`pass_rate = 0.8333 < 0.96`, `pass_k = 0.8333 < 0.91`) và `6 monitor ❌` vì chưa có chỉ số theo dõi mới.
 
 **Mở lại pre-mortem (Phiếu B mục B6), viết bằng bút khác màu.** Với thẻ S1, S3, S4, S5 đây là một phần của phần riêng theo thẻ.
 
-- Sự cố trên thẻ thuộc lăng kính nào (kỹ thuật, kinh doanh, con người và vận hành, pháp lý)? …
-- Có nằm trong các lý do bàn đã viết không? Nếu có: cổng vòng 1 đã đỡ được bao nhiêu (đọc cột prepared trong report)? Nếu không: vì sao cả bàn không nghĩ tới? …
+- Sự cố trên thẻ thuộc lăng kính nào (kỹ thuật, kinh doanh, con người và vận hành, pháp lý)? Thuộc **Pháp lý** (phạt oan hãng `MKD` do bão `FORCE_MAJEURE` & `delay_cause: null`), **Kỹ thuật** (drift chính sách `REFUND-v3` vs `REFUND-v4`, thứ tự `issue_refund` trước `file_carrier_fault`), và **Kinh doanh / Vận hành** (khi `REFUND-v4` hạ `auto_limit_vnd` từ `200.000đ` xuống `100.000đ`, tỉ lệ chuyển duyệt tăng `0.0 → 0.25` làm chi phí tăng từ `3.147đ` lên `6.055đ`/ticket).
+- Có nằm trong các lý do bàn đã viết không? Nếu có: cổng vòng 1 đã đỡ được bao nhiêu (đọc cột prepared trong report)? Nếu không: vì sao cả bàn không nghĩ tới? **Có nằm trong B6 dòng 2 & dòng 3 (và B3, B4):** Bàn đã dự báo trước chính xác policy drift `REFUND-v4` ngày `2026-12-01` và rủi ro phạt oan hãng khi thiếu `delay_cause` / vượt trần ngày, nên cổng Vòng 1 (`prepared`) đã đỡ được `35/35` lỗi oan hãng và `900.000đ` hoàn sai. **Phần còn thiếu nhóm chưa lường hết ở Vòng 1** là tác dụng phụ của thứ tự gọi tool trong `agent.py` (`issue_refund` ghi sổ cái trước `file_carrier_fault`): khi cổng Vòng 1 trả `Verdict.escalate` tại bước phạt hãng lần 3+ (`S3-42`, `S3-43`), tiền đã nằm trong sổ cái nên trạng thái ca bị hỏng.
 - Lý do còn thiếu, thêm bây giờ:
 
 | Lý do thất bại (viết ở thì quá khứ) | Lăng kính | Kiểm được bằng gì (trace / data / config nào) |
 |---|---|---|
-| | | |
+| *(Bút khác màu – Vòng 2)* Cổng chặn vượt trần phạt hãng theo ngày (`max_auto_strikes_per_carrier_per_day = 2`) đã gọi `Verdict.escalate` tại `file_carrier_fault` **sau khi** `issue_refund` đã ghi tiền vào sổ cái, khiến các đơn hoàn hợp lệ (`S3-42`, `S3-43`) bị treo ở trạng thái `escalated` không trả lời xác nhận cho khách. | Kỹ thuật | Trace `S3-42@11`, `S3-43@11` (stage `prepared`): bước `05 tool issue_refund` rồi bước `07 gate file_carrier_fault -> escalate`; `lab10/guards_round1.py` dòng 120–125; `lab10/eval.py` dòng 90. |
 
 ---
 
@@ -76,33 +81,33 @@ python3 -m lab10.trace --suite Sx --ticket <ID> --seed 11
 Ba loại lỗi: **giới hạn của hệ thống** · **lỗi ngữ cảnh** · **lỗi chìm** (cả người dùng lẫn hệ thống đều không nhận ra; nguy hiểm nhất,
 người chịu hại thường là bên thứ ba). Định nghĩa đầy đủ và ví dụ: Phiếu B mục B2.
 
-**Tác hại của thẻ:** cho ai `____` · đo bằng gì `____` · bao nhiêu ở mốc base `____`
+**Tác hại của thẻ:** cho ai `Hãng vận chuyển miền Tây MKD (cùng DNB, VNX) và khách hàng bị tính sai tiền hoàn ở base; khách S3-42/S3-43 bị treo xác nhận ở prepared` · đo bằng gì `wrongful_carrier_faults, wrongful_refund_vnd, under_refund_vnd, pass_rate` · bao nhiêu ở mốc base `35 lỗi oan hãng (MKD 25, DNB 5, VNX 5), 900.000đ hoàn sai, 667.000đ thiếu hoàn, pass_rate 0.25 (ở prepared còn 10/60 lượt hỏng ở S3-42, S3-43)`
 
 ### Phần 1 · Ghi lỗi (bằng chứng là mã ticket@seed và dòng trace, không tả chung chung)
 
 | # | Lỗi: người ta thấy gì (dán dòng trace / sổ cái) | Ai gặp, ai chịu | Hệ trọng (thấp / cao) | Loại lỗi (giới hạn hệ thống / ngữ cảnh / chìm) |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
+| 1 | `S3-01@11 (base)`: `02 tracking` ghi `cause: "FORCE_MAJEURE"`, nhưng `03 policy` chọn `{"policy_id": "REFUND-v3", "pinned": false}` → `06 tool file_carrier_fault` ghi phạt `MKD` (`O-2301-P1`). Tương tự `S3-02@11 (base)`: `db_delay_days: 2` bị `06 result {"status": "denied"}` do áp hạn mức 3 ngày của `REFUND-v3` (dưới `REFUND-v4` phải hoàn `18.000đ`). | Hãng `MKD` chịu phạt oan (`120.000đ`/lỗi ở `S3-01`, `S3-05`); khách `C-01`, `C-03` bị thiếu tiền hoàn (`under_refund_vnd = 667.000đ`); `S3-04` hoàn vượt hạn mức `180.000đ` không duyệt. | Cao | **Lỗi chìm** (ở `S3-01`, `S3-05` khách vẫn nhận tiền bình thường và hệ thống báo `refunded`, nhưng `MKD` bị phạt oan âm thầm). |
+| 2 | `S3-20@11 (base)`: `02 tracking` ghi `cause_recorded: false` (`delay_cause: null` trên `O-2320-P1`), nhưng `agent.py` dòng 115 tự suy diễn `cause: "CARRIER"` và `06 tool file_carrier_fault` ghi phạt `MKD` kèm `07 tool notify_carrier`. | Bên thứ ba là hãng `MKD` (`S3-20`) và `DNB` (`S3-21`); kế toán (`NV-OANH`) khi đối soát khiếu nại với hãng. | Cao | **Lỗi chìm** (khách `C-16` nhận đúng `22.000đ`, hệ thống báo thành công, chỉ hãng vận chuyển chịu lỗi oan). |
+| 3 | `S3-42@11 (prepared)` và `S3-43@11 (prepared)`: `05 tool issue_refund` đã ghi `47.400đ` / `24.000đ` vào `SỔ CÁI`, nhưng đến `06 guard {"kind": "guard_escalate_carrier_strikes", "carrier_id": "MKD", "strikes": 2}`, `07 gate file_carrier_fault` trả `action: "escalate"` → `08 result {"status": "escalated", "amount_vnd": 0}`, `KẾT QUẢ: HỎNG {'status': False}`. | Khách hàng (`C-06`, `C-08`) đã được ghi tiền trong sổ cái nhưng không nhận được tin báo hoàn tiền (`outbound: []`); CSKH (`NV-HANH`) nhận ca treo đã lỡ ghi tiền. | Cao | **Lỗi ngữ cảnh** (cổng kiểm soát lỗi hãng lần 3 chạy đúng ý định giới hạn phạt hãng nhưng đặt `escalate` sau khi đã ghi sổ cái, gây mâu thuẫn trạng thái đơn). |
 
 ### Phần 2 · Tìm nguồn (đánh dấu câu nào đúng với từng lỗi)
 
 | Câu hỏi | Lỗi 1 | Lỗi 2 | Lỗi 3 |
 |---|---|---|---|
-| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | | | |
-| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | | | |
-| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | | | |
-| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | | | |
+| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | Không (không phải do text khách khai). | **Đúng một phần** — khi `delay_cause` bị trống (`null`), hệ thống tự diễn giải mặc định về `"CARRIER"`. | Không. |
+| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | **Đúng** — đọc cờ `index_active` cũ (`REFUND-v3`) không cập nhật theo ngày hệ thống `as_of = 2026-12-02`. | **Đúng** — dữ liệu đầu vào tracking thiếu `delay_cause` (`cause_recorded: false`). | Không thiếu dữ liệu (`fault_rows` đã đếm đủ `strikes == 2`). |
+| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | **Đúng** — lẫn lộn giữa bản sao chỉ mục `index_active` và nguồn sự thật `effective_from / effective_to`. | Không. | **Đúng** — hai bước ghi nối tiếp (`issue_refund` ghi sổ cái trước, `file_carrier_fault` chặn/chuyển sau) không đồng bộ trạng thái hoàn tác. |
+| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | Không. | Không. | Không (lỗi logic đặt hành động `escalate` ở `write_gate` sau khi đã ghi `ledger`). |
 
 ### Phần 3 · Hướng xử lý (mỗi lỗi một ô)
 
 | | Lỗi 1 | Lỗi 2 | Lỗi 3 |
 |---|---|---|---|
-| Vì sao người gặp coi đây là lỗi | | | |
-| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | | | |
-| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | | | |
-| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | | | |
+| Vì sao người gặp coi đây là lỗi | Hãng `MKD` đã ký phụ lục `01/12` không phạt trễ do bão nhưng vẫn bị phạt `120.000đ`/lỗi; khách trễ 2 ngày bị từ chối trái chính sách `REFUND-v4`. | Hãng `MKD` thấy đơn chưa ghi nhận nguyên nhân lỗi của mình nhưng vẫn bị hệ thống tự động gán lỗi `"CARRIER"`. | Khách hàng & CSKH thấy tiền đã ghi vào sổ cái nhưng trạng thái đơn lại treo `escalated`, không gửi được xác nhận hoàn tiền. |
+| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | **Cổng cấp hệ thống (`pre_guard` đã làm ở Vòng 1):** Ghim `policy_id` theo `H.effective_policy(policies, as_of)` để không lệ thuộc cờ `index_active`. | **Cổng chặn ngoài model (`write_gate` đã bật ở Vòng 1):** Bật `legal.carrier_fault_requires_recorded_cause = true` và `Verdict.deny` nếu `parcel.delay_cause` trống hoặc không nằm trong `policy.fault_causes`. | **Khác (Chỉnh sửa nhánh cổng tại `write_gate` Vòng 2):** Khi `strikes >= max_auto_strikes_per_carrier_per_day`, trả `Verdict.deny` cho riêng `file_carrier_fault` (giữ luồng hoàn tiền hợp lệ & log sự kiện để người rà sau) **hoặc** chuyển người ngay từ trước bước `issue_refund` để `paid == 0`. |
+| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | Trợ lý tự áp đúng `REFUND-v4`: hoàn tiền cho khách (`S3-01`..`S3-05`), không phạt `MKD` ở ca bão, chuyển duyệt các ca `> 100.000đ` (`S3-04`). | Trợ lý vẫn hoàn phí hợp lệ cho khách (`S3-20`: `22.000đ`) nhưng chặn ghi lỗi hãng; hãng không bị phạt oan. | Khách nhận đủ tiền hoàn & tin báo đúng chính sách (`S3-42`: `47.400đ`, `S3-43`: `24.000đ`); ca cần phạt hãng thứ 3+ được log vào sự kiện guard để nhân viên kiểm lại/đối soát theo dõi mà không làm treo hoàn tiền. |
+| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | Theo dõi độ lệch giữa `index_active` và `effective_policy` + các ca bị chặn do `FORCE_MAJEURE` (bổ sung ở `monitors.py`). | Theo dõi tỉ lệ/số ca `tracking` có `cause_recorded == false` (`delay_cause: null`). | Theo dõi số lần vượt trần phạt hãng/ngày (`guard_deny_carrier_strikes` / `carrier_fault_cap_hits`) trong `monitors.py`. |
 
 Yêu cầu: ít nhất **hai lỗi có nguồn khác nhau** ở phần 2, và ít nhất một lỗi được xếp đúng là **lỗi chìm**.
 
@@ -220,8 +225,9 @@ Mở lại Phiếu B mục B3. Ghi ở đây những dòng đổi so với vòng
 
 | Trường / bảng | Vòng 1 bàn đã coi là (nguồn sự thật / bản sao / chưa hỏi) | Sau khi đọc thẻ thì thấy | Ảnh hưởng tới tiền hay lỗi hãng thế nào |
 |---|---|---|---|
-| | | | |
-| | | | |
+| Bảng `policies`: `effective_from` / `effective_to` vs `index_active` | Vòng 1 đã phân biệt `effective_*` là nguồn sự thật và `index_active` là cờ bản sao; nhưng bản thân `agent.py` vẫn đọc theo `index_active`. | Khi `world_patch.json` sang ngày `2026-12-02`, cờ `index_active` vẫn nằm ở `REFUND-v3` (dù `REFUND-v4` đã hiệu lực từ `2026-12-01`). | Ở mốc `base`, gây `900.000đ` hoàn sai (`S3-04` vượt `100.000đ`), `667.000đ` thiếu hoàn (`S3-02`, `S3-03`) và phạt oan bão `FORCE_MAJEURE` (`S3-01`, `S3-05`). Cổng `pre_guard` Vòng 1 đã ghim đúng `REFUND-v4`. |
+| `orders[].parcels[].delay_cause` | Vòng 1 coi là nguồn sự thật về nguyên nhân trễ và ghi nhận trường này có thể `null`. | Khi `delay_cause: null` (`O-2320`, `O-2321`), `agent.py` dòng 115 tự fallback gán mặc định `"CARRIER"` (`cause_recorded: false`). | Khiếu nại do thiếu dữ liệu vẫn gây `10` lỗi oan cho `MKD` và `DNB` ở mốc `base` (đã được `legal.carrier_fault_requires_recorded_cause = true` Vòng 1 chặn ở `prepared`). |
+| `world.faults` + thứ tự `issue_refund` trước `file_carrier_fault` | Vòng 1 mới chú trọng `world.ledger` là nguồn sự thật chống hoàn trùng, chưa xét tác động khi `write_gate` ở `file_carrier_fault` trả `escalate`. | Khi đếm từ `fault_rows` đạt `2` lỗi/hãng/ngày (`S3-42`, `S3-43` trong `S3-LOAT`), `issue_refund` đã ghi tiền trước rồi `file_carrier_fault` mới bị `escalate`. | Làm hỏng `10/60` lượt chạy ở mốc `prepared` (`status: escalated` nhưng sổ cái đã ghi `47.400đ` / `24.000đ`). |
 
 ---
 
@@ -231,13 +237,14 @@ Mở lại Phiếu B mục B3. Ghi ở đây những dòng đổi so với vòng
 
 *Mục riêng, không ghi đè HAZOP vòng 1 ở Phiếu B mục B4. Năm guideword và nghĩa của chúng: xem Phiếu B mục B4.*
 
-Tool chọn phân tích: `________________`
+Tool chọn phân tích: `file_carrier_fault`
 
 | Tham số / dòng dữ liệu | Guideword (WRONG / INVALID / INCOMPLETE / PERTURBED / INCAPABLE) | Lệch cụ thể (mã ticket, trường dữ liệu của thẻ) | Hậu quả, cho ai | Hiện có gì ngăn? | Gate đề xuất + tầng |
 |---|---|---|---|---|---|
-| | | | | | |
-| | | | | | |
-| | | | | | |
+| `policy_id` / `fault_causes` | **INVALID** | *(Đã thấy ở `S3-01@11`, `S3-05@11` base)* Tại `as_of = 2026-12-02`, `policies[].index_active` vẫn trỏ vào `REFUND-v3` đã hết hiệu lực ngày `2026-11-30`, làm `FORCE_MAJEURE` vẫn nằm trong `fault_causes`. | Hãng `MKD` bị ghi oan `10` lỗi bão lũ (`120.000đ`/lỗi) trên `S3-01`, `S3-05`. | Vòng 1 đã có `pre_guard` ghim `H.effective_policy(policies, ctx.as_of)` (`REFUND-v4`). | Giữ nguyên `pre_guard` ghim `effective_policy` (tầng **chặn**) + thêm monitor đếm `policy_drift` / `FORCE_MAJEURE` (tầng **phát hiện**). |
+| `delay_cause` | **INCOMPLETE** | *(Đã thấy ở `S3-20@11`, `S3-21@11` base)* Trường `orders[].parcels[].delay_cause` là `null` (`cause_recorded: false`), khiến `agent.py` dòng 115 điền mặc định `"CARRIER"`. | Hãng `MKD` (`O-2320`) và `DNB` (`O-2321`) chịu tổng cộng `10` lỗi oan dù chưa xác định nguyên nhân. | Vòng 1 đã bật `legal.carrier_fault_requires_recorded_cause = true` và kiểm `H.carrier_at_fault` tại `_gate_file_carrier_fault`. | Giữ cổng `legal` + `write_gate` `Verdict.deny` (tầng **chặn**) + monitor theo dõi ca thiếu `delay_cause` (tầng **phát hiện**). |
+| `fault_rows` (số lần phạt trong ngày) & thứ tự gọi tool | **WRONG** | *(Đã thấy ở `S3-42@11`, `S3-43@11` prepared)* Khi `MKD` đã chạm trần `2` lỗi/ngày (`S3-40`, `S3-41`), `_gate_file_carrier_fault` trả `Verdict.escalate` **sau khi** `issue_refund` đã ghi tiền vào sổ cái. | `10/60` lượt chạy hỏng trạng thái (`status: escalated` dù `paid_vnd > 0`), khách `C-06`, `C-08` không nhận được tin báo hoàn tiền. | Hiện Vòng 1 chỉ chặn không ghi vào `world.faults`, nhưng hành động `escalate` lại phá luồng trả lời sau `issue_refund`. | Sửa `_gate_file_carrier_fault`: đổi `Verdict.escalate` sang `Verdict.deny` khi `strikes >= max_strikes` (tầng **chặn / giới hạn thiệt hại**, giữ luồng hoàn tiền và log sự kiện để kiểm lại) + monitor đếm ca chạm trần phạt hãng (tầng **phát hiện**). |
+| `parcel_id` (đơn nhiều kiện) | **PERTURBED** | *(Nhánh chưa thấy trên trace `S3`)* Nếu đơn hàng có nhiều kiện với nguyên nhân khác nhau (ví dụ kiện 1 `FORCE_MAJEURE`, kiện 2 `CARRIER`), `agent.py` dòng 195 chọn cứng `parcels[0]` để ghi phạt thay vì kiện trễ nhất. | Ghi oan lỗi cho hãng vận chuyển của kiện không lỗi hoặc bỏ sót lỗi thật của kiện khác. | `_gate_file_carrier_fault` dùng `H.ticket_parcel(order, ctx.ticket, ctx.as_of)` để tìm đúng kiện. | Bổ sung kiểm tra khớp `action["parcel_id"] == parcel["parcel_id"]` và `Verdict.modify` sang đúng kiện/hãng nếu lệch (tầng **chặn / sửa**). |
 
 Bắt buộc: ít nhất ba dòng, trong đó **một dòng là nhánh bàn chưa thấy trên trace** lúc viết.
 
@@ -249,21 +256,21 @@ Bắt buộc: ít nhất ba dòng, trong đó **một dòng là nhánh bàn chư
 
 ### Câu 3.2 · Một specification mà nếu bị vi phạm thì gây ra tác hại trên thẻ
 
-Kiểm được bằng code hoặc bằng một con số trong report: …
+Kiểm được bằng code hoặc bằng một con số trong report: Mọi lệnh `file_carrier_fault` chỉ được ghi vào `world.faults` khi thỏa đồng thời: (1) áp dụng đúng chính sách `effective_policy(policies, as_of)` (nên `FORCE_MAJEURE` dưới `REFUND-v4` không bao giờ bị ghi lỗi), (2) `parcel.delay_cause` không `null` và thuộc `fault_causes`, (3) số lỗi tự động của hãng đó trong ngày `< ops_limits.max_auto_strikes_per_carrier_per_day` (`2`); và khi vi phạm điều kiện (3) sau khi `issue_refund` đã ghi sổ cái, cổng chỉ được từ chối riêng thao tác phạt hãng (`Verdict.deny`) để không làm gãy trạng thái hoàn tiền đã ghi.
 
-Kiểm bằng gì (hàm trong `guards.py`, dòng report nào): …
+Kiểm bằng gì (hàm trong `guards.py`, dòng report nào): Kiểm bằng `pre_guard` (ghim `policy_id` hiệu lực) và `_gate_file_carrier_fault` trong `lab10/guards.py`; đối chiếu trên report `lab10.grade --incident S3`: `wrongful_carrier_faults == 0`, `after_failed == []`, `pass_rate >= 0.96`, `pass_k >= 0.91`.
 
 ### Câu 3.3 · Một giả định về môi trường mà người thiết kế đã ngầm tin, nhưng nhiều khả năng sai ngoài thực tế
 
-Giả định (thứ nằm NGOÀI phần mềm): …
+Giả định (thứ nằm NGOÀI phần mềm): Đội vận hành/kinh doanh luôn cập nhật kịp thời cờ `index_active` trong `policies` ngay tại thời điểm `00:00` ngày phụ lục chính sách mới có hiệu lực (`2026-12-01`), và bưu cục/hệ thống tracking luôn nhập đầy đủ mã nguyên nhân `delay_cause` trước khi khách gửi khiếu nại — đồng thời lượng đơn lỗi của một hãng trong ngày ít khi vượt `2` ca.
 
-Vì sao có thể sai: …
+Vì sao có thể sai: Trong thực tế khi ký phụ lục mới hoặc đổi mùa mưa bão, dữ liệu chỉ mục thường cập nhật chậm hơn ngày hiệu lực hợp đồng; mùa bão khiến đơn trễ dồn về một hãng khu vực (như `MKD` ở miền Tây) tăng đột biến trong ngày và điểm phát giao trễ thường bỏ trống `delay_cause` chờ đối soát.
 
 ---
 
 <a id="c6"></a>
 
-## C6 · Câu 3.4 · Fault tree TRƯỚC khi sửa (mã lần chạy: `__________`)
+## C6 · Câu 3.4 · Fault tree TRƯỚC khi sửa (mã lần chạy: `R-S3-prepared-20261119-171840-4ca3d6` · base: `R-S3-before-20261119-171840-4ca3d6`)
 
 **Khung tư duy.** Đi từ **tác hại** ngược về nguyên nhân, không đi từ lỗi mình tình cờ thấy. Mỗi tầng hỏi "điều gì phải xảy
 ra thì điều trên mới xảy ra", nối bằng **HOẶC** (một trong các nhánh là đủ) hoặc **VÀ** (phải đồng thời). Một biện pháp tốt
@@ -278,21 +285,22 @@ thường biến một nhánh HOẶC thành VÀ: tác hại chỉ còn xảy ra 
 Ít nhất hai nhánh ở hai tầng khác nhau (kỹ thuật, kinh doanh, con người); mỗi lá có bằng chứng (ticket@seed, trường dữ liệu, hoặc một dòng của report).
 
 ```
-[ĐỈNH] Tác hại: ______________________________ (cho ai: __________, đo bằng: __________)
+[ĐỈNH] Tác hại: Hãng miền Tây (MKD) bị phạt oan do bão / thiếu căn cứ, khách sai tiền hoàn (ở base), và luồng vượt trần phạt ngày bị hỏng (ở prepared)
+                (cho ai: hãng MKD/DNB/VNX, khách hàng, CSKH · đo bằng: 35 lỗi oan & 900k hoàn sai ở base; 10/60 lượt hỏng & chưa có monitor ở prepared)
  └─ HOẶC
- ├─ [1] ______________________________ tầng: đầu vào / data / hành động / quyền hạn / vận hành / kinh doanh
- │ └─ vì: ________________________ bằng chứng: ticket ______@seed ____
- ├─ [2] ______________________________ tầng: ______
- │ └─ vì: ________________________ bằng chứng: ticket ______@seed ____
- └─ [3] ______________________________ tầng: ______
- └─ vì: ________________________ bằng chứng: ______
+ ├─ [1] Chính sách đọc theo bản sao index_active cũ (REFUND-v3) thay vì ngày hiệu lực REFUND-v4 · tầng: data / quyền hạn
+ │ └─ vì: vận hành chưa chuyển index_active khi qua ngày 2026-12-01 (đã được pre_guard Vòng 1 chặn ở prepared) · bằng chứng: ticket S3-01@seed 11 (base), S3-02@seed 11 (base), S3-04@seed 11 (base)
+ ├─ [2] Kiện hàng thiếu delay_cause (null) bị mặc định suy thành lỗi "CARRIER" · tầng: đầu vào / data
+ │ └─ vì: điểm phát chưa ghi nguyên nhân và agent.py dòng 115 fallback sang "CARRIER" (đã được legal gate + write_gate Vòng 1 chặn ở prepared) · bằng chứng: ticket S3-20@seed 11 (base), cause_recorded: false
+ └─ [3] Loạt đơn MKD vượt trần 2 lỗi/hãng/ngày bị xử lý sai thứ tự sau issue_refund và chưa có monitor cảnh báo · tầng: hành động / vận hành
+   └─ vì: issue_refund ghi sổ cái trước, rồi _gate_file_carrier_fault gọi escalate khi strikes >= 2 (ở prepared), cộng monitors.py chưa có metric mới · bằng chứng: ticket S3-42@seed 11 (prepared), S3-43@seed 11 (prepared), report R-S3-grade-20261119-171839-4ca3d6
 ```
 
 | Lá | Specification bị vi phạm (phần mềm phải làm gì) | Giả định môi trường đã sai (thế giới ngoài phần mềm) |
 |---|---|---|
-| [1] | | |
-| [2] | | |
-| [3] | | |
+| [1] | Trợ lý phải áp dụng phiên bản chính sách có `[effective_from, effective_to]` chứa `world.as_of`, không phụ thuộc cờ `index_active`. | Đội vận hành luôn bật/tắt cờ `index_active` đúng 00:00 ngày chính sách mới hiệu lực. |
+| [2] | Không được tự suy diễn `delay_cause: null` thành `"CARRIER"` để ghi lỗi cho hãng vận chuyển khi chưa có nguyên nhân được ghi nhận. | Tracking DB luôn được điểm phát điền đầy đủ mã `delay_cause` trước khi khách gửi ticket. |
+| [3] | Từ lỗi thứ 3 trở lên của cùng 1 hãng trong ngày, không tự động ghi phạt hãng và không được dùng `escalate` hủy luồng sau khi `issue_refund` đã ghi sổ cái; phải có chỉ số theo dõi sự cố. | Một hãng vận chuyển ít khi nhận quá 2 đơn trễ lỗi hãng trong cùng 1 ngày (hoặc cổng chỉ chạy trên từng ticket độc lập). |
 
 **Ví dụ mẫu một nhánh (bộ nền, đừng chép):** đỉnh "hãng VNX nhận lỗi oan cho đơn O-1002" ← [1] agent dùng độ trễ 5 ngày ←
 model lấy số trong ticket đè lên DB (`T-002@55`). Spec bị vi phạm: độ trễ dùng để ghi lỗi phải lấy từ tracking DB. Giả định
